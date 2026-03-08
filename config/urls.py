@@ -39,3 +39,8 @@ urlpatterns = [
     path("api/v1/", include("modules.notificaciones.urls")),
     path("api/v1/", include("modules.reportes.urls")),
 ]
+    path("api/v1/", include("modules.inventario.urls")),
+    path("api/v1/", include("modules.facturacion.urls")),
+    path("api/v1/", include("modules.notificaciones.urls")),
+    path("api/v1/", include("modules.reportes.urls")),
+]
