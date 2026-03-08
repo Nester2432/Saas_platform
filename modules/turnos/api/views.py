@@ -56,6 +56,16 @@ from core.mixins import TenantQuerysetMixin
 from core.pagination import DefaultPagination
 from core.permissions.base import IsTenantAuthenticated, ModuloActivoPermission
 
+from modules.turnos.api.permissions import (
+    PuedeVerTurnos,
+    PuedeCrearTurnos,
+    PuedeConfirmarTurnos,
+    PuedeCancelarTurnos,
+    PuedeReprogramarTurnos,
+    PuedeCompletarTurnos,
+    TurnoObjectPermission,
+)
+
 from modules.turnos.exceptions import TurnoNoDisponibleError, TransicionInvalidaError
 from modules.turnos.models import (
     Profesional,
@@ -188,6 +198,54 @@ class TurnoViewSet(TenantQuerysetMixin, viewsets.GenericViewSet):
     search_fields       = ["^profesional__nombre", "^profesional__apellido", "^servicio__nombre"]
     ordering_fields     = ["fecha_inicio", "created_at", "estado"]
     ordering            = ["fecha_inicio"]   # default: chronological
+
+    # ── per-action permission routing ─────────────────────────────────────────
+
+    def get_permissions(self):
+        """
+        Return the permission list for the current action.
+
+        Layer 1 (always applied): IsTenantAuthenticated + ModuloActivoPermission
+            → from permission_classes above — user is authenticated, belongs to
+              an empresa, and the empresa has the "turnos" module active.
+
+        Layer 2 (per-action): action-specific permission class
+            → answers "can this role perform this action at all?"
+            → combined with Layer 1 via DRF's AND semantics (all must pass).
+
+        Layer 3 (object-level): TurnoObjectPermission
+            → applied by ViewSet.get_object() on detail routes and actions.
+            → answers "can this user access THIS specific turno?"
+            → enforces profesional self-scope and defense-in-depth tenant guard.
+
+        Mapping:
+            list / retrieve    → PuedeVerTurnos
+            create             → PuedeCrearTurnos
+            confirmar          → PuedeConfirmarTurnos  + TurnoObjectPermission
+            cancelar           → PuedeCancelarTurnos   + TurnoObjectPermission
+            reprogramar        → PuedeReprogramarTurnos + TurnoObjectPermission
+            completar          → PuedeCompletarTurnos  + TurnoObjectPermission
+            ausente            → PuedeCompletarTurnos  + TurnoObjectPermission
+            slots              → PuedeCrearTurnos (booking intent required)
+        """
+        # Base guards always run first — DRF evaluates permission_classes AND
+        # the list returned here. To avoid double-evaluation, we return instances
+        # explicitly and override permission_classes completely per action.
+        base = [IsTenantAuthenticated(), ModuloActivoPermission()]
+
+        action_permissions = {
+            "list":        [PuedeVerTurnos()],
+            "retrieve":    [PuedeVerTurnos(),        TurnoObjectPermission()],
+            "create":      [PuedeCrearTurnos()],
+            "confirmar":   [PuedeConfirmarTurnos(),  TurnoObjectPermission()],
+            "cancelar":    [PuedeCancelarTurnos(),   TurnoObjectPermission()],
+            "reprogramar": [PuedeReprogramarTurnos(), TurnoObjectPermission()],
+            "completar":   [PuedeCompletarTurnos(),  TurnoObjectPermission()],
+            "ausente":     [PuedeCompletarTurnos(),  TurnoObjectPermission()],
+            "slots":       [PuedeCrearTurnos()],
+        }
+
+        return base + action_permissions.get(self.action, [PuedeVerTurnos()])
 
     # ── queryset ─────────────────────────────────────────────────────────────
 
