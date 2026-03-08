@@ -134,3 +134,4 @@ class EmpresaConfiguracion(BaseModel):
 
     def __str__(self):
         return f"Config: {self.empresa.nombre}"
+
