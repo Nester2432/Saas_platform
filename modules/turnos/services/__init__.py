@@ -17,13 +17,16 @@ from modules.turnos.services.disponibilidad import (
     MOTIVO_BLOQUEO_ACTIVO,
     MOTIVO_TURNO_EXISTENTE,
 )
+from modules.turnos.services.turnos import TurnoService
 
 __all__ = [
+    # Availability — read-only
     "DisponibilidadService",
     "ResultadoDisponibilidad",
     "SlotDisponible",
     "MOTIVO_FUERA_DE_HORARIO",
     "MOTIVO_BLOQUEO_ACTIVO",
     "MOTIVO_TURNO_EXISTENTE",
-    # "TurnoService",  ← added when turnos.py is implemented
+    # Mutations
+    "TurnoService",
 ]
