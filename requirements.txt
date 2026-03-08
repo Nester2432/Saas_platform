@@ -1,0 +1,36 @@
+# Core
+Django==5.0.6
+djangorestframework==3.15.2
+psycopg2-binary==2.9.9
+
+# Auth
+djangorestframework-simplejwt==5.3.1
+
+# Caching
+django-redis==5.4.0
+redis==5.0.7
+
+# Filtering
+django-filter==24.2
+
+# CORS
+django-cors-headers==4.4.0
+
+# Task queue (for notifications/workers)
+celery==5.4.0
+celery[redis]==5.4.0
+
+# Utilities
+python-decouple==3.8      # ENV variable management
+Pillow==10.4.0             # Image handling
+
+# Development
+ipython==8.26.0
+django-extensions==3.2.3
+
+# Testing
+pytest==8.3.2
+pytest-django==4.8.0
+pytest-cov==5.0.0
+factory-boy==3.3.1
+faker==26.0.0
