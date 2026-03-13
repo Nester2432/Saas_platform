@@ -420,6 +420,25 @@ class Producto(EmpresaModel):
         codigo_str = f" [{self.codigo}]" if self.codigo else ""
         return f"{self.nombre}{codigo_str}"
 
+    def save(self, *args, **kwargs):
+        is_new = self._state.adding
+        if is_new:
+            from modules.billing.services.billing_service import BillingService
+            BillingService.check_plan_limits(self.empresa, "productos")
+
+        super().save(*args, **kwargs)
+        if is_new:
+            from modules.events.event_bus import EventBus
+            from modules.events import events
+            EventBus.publish(
+                events.PRODUCTO_CREADO,
+                empresa_id=self.empresa_id,
+                usuario_id=str(self.created_by_id) if self.created_by_id else None,
+                recurso="producto",
+                recurso_id=self.id,
+                nombre=self.nombre
+            )
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # MovimientoStock
@@ -588,7 +607,7 @@ class MovimientoStock(EmpresaModel):
             # The DESC on created_at is expressed as a negative prefix in the field list.
             models.Index(
                 fields=["empresa", "producto", "-created_at"],
-                name="idx_movimiento_empresa_producto_fecha",
+                name="idx_mov_emp_prod_fecha",
             ),
             # ── Type filtering ────────────────────────────────────────────
             # "All SALIDA movements for this empresa" (shrinkage report)
@@ -602,7 +621,7 @@ class MovimientoStock(EmpresaModel):
             # Used by Reportes: join inventario movements to a sale record.
             models.Index(
                 fields=["empresa", "referencia_tipo", "referencia_id"],
-                name="idx_movimiento_empresa_referencia",
+                name="idx_mov_emp_ref",
             ),
         ]
 

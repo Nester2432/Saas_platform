@@ -55,6 +55,11 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     - roles: M2M to Rol, scoped to empresa
     """
 
+    class RolUsuario(models.TextChoices):
+        ADMIN = "ADMIN", "Administrador"
+        VENDEDOR = "VENDEDOR", "Vendedor"
+        CONTADOR = "CONTADOR", "Contador"
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True, db_index=True)
     nombre = models.CharField(max_length=100)
@@ -66,6 +71,11 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
         on_delete=models.CASCADE,
         related_name="usuarios",
         db_index=True,
+    )
+    rol = models.CharField(
+        max_length=20,
+        choices=RolUsuario.choices,
+        default=RolUsuario.VENDEDOR
     )
     roles = models.ManyToManyField(
         "Rol",
@@ -94,6 +104,12 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
         db_table = "usuarios_usuario"
         verbose_name = "Usuario"
         verbose_name_plural = "Usuarios"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["empresa", "email"],
+                name="unique_user_email_empresa"
+            )
+        ]
         indexes = [
             models.Index(fields=["empresa", "is_active"]),
             models.Index(fields=["email"]),
@@ -108,6 +124,8 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
         Check if this user has a specific permission via their roles.
         Cached per-request in production via @cached_property or Redis.
         """
+        if self.rol == self.RolUsuario.ADMIN:
+            return True
         return self.roles.filter(
             permisos__codigo=permiso_codigo,
             empresa=self.empresa

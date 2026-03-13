@@ -264,7 +264,7 @@ class Profesional(EmpresaModel):
             # Resolve which professional a logged-in user maps to
             models.Index(
                 fields=["empresa", "usuario"],
-                name="idx_profesional_empresa_usuario",
+                name="idx_prof_emp_user",
             ),
             # Default sort per empresa
             models.Index(
@@ -342,7 +342,7 @@ class ProfesionalServicio(EmpresaModel):
             # "Which services does this professional offer?" (booking flow)
             models.Index(
                 fields=["empresa", "profesional"],
-                name="idx_profserv_empresa_profesional",
+                name="idx_pserv_emp_prof",
             ),
             # "Which professionals offer this service?" (availability search)
             models.Index(
@@ -425,7 +425,7 @@ class HorarioDisponible(EmpresaModel):
             # The most frequent availability query: filters by empresa + profesional + day.
             models.Index(
                 fields=["empresa", "profesional", "dia_semana"],
-                name="idx_horario_empresa_profesional_dia",
+                name="idx_hor_emp_prof_dia",
             ),
             # "Which professionals work on this day?" (staff overview)
             models.Index(
@@ -501,11 +501,11 @@ class BloqueoHorario(EmpresaModel):
             # Both fecha_inicio and fecha_fin appear in WHERE — index both.
             models.Index(
                 fields=["empresa", "profesional", "fecha_inicio"],
-                name="idx_bloqueo_empresa_profesional_inicio",
+                name="idx_bloq_emp_prof_ini",
             ),
             models.Index(
                 fields=["empresa", "profesional", "fecha_fin"],
-                name="idx_bloqueo_empresa_profesional_fin",
+                name="idx_bloq_emp_prof_fin",
             ),
             # "All bloqueos in a date range for an empresa" (agenda overview)
             models.Index(
@@ -653,7 +653,7 @@ class Turno(EmpresaModel):
             # Primary index for the agenda view and double-booking check.
             models.Index(
                 fields=["empresa", "profesional", "fecha_inicio"],
-                name="idx_turno_empresa_profesional_inicio",
+                name="idx_trn_emp_prof_ini",
             ),
             # "Active appointments for this professional" (estado filter)
             # Used by the anti-double-booking select_for_update query:
@@ -661,19 +661,19 @@ class Turno(EmpresaModel):
             #   AND fecha_inicio < new_fin AND fecha_fin > new_inicio
             models.Index(
                 fields=["empresa", "profesional", "estado", "fecha_inicio"],
-                name="idx_turno_empresa_profesional_estado",
+                name="idx_trn_emp_prof_est",
             ),
             # fecha_fin needed as the right bound of the overlap check:
             #   existing.fecha_fin > new_fecha_inicio
             models.Index(
                 fields=["empresa", "profesional", "fecha_fin"],
-                name="idx_turno_empresa_profesional_fin",
+                name="idx_trn_emp_prof_fin",
             ),
             # ── Client history ──────────────────────────────────────────
             # "All appointments for this client" (client detail view)
             models.Index(
                 fields=["empresa", "cliente", "fecha_inicio"],
-                name="idx_turno_empresa_cliente_inicio",
+                name="idx_trn_emp_cli_ini",
             ),
             # ── Date-range queries ──────────────────────────────────────
             # "All appointments on a given date" (daily/weekly agenda)

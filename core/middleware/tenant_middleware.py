@@ -28,37 +28,47 @@ logger = logging.getLogger(__name__)
 EMPRESA_CACHE_TTL = 300  # 5 minutes
 
 
-class TenantMiddleware(MiddlewareMixin):
+class TenantMiddleware:
     """
     Resolves the current tenant (Empresa) and attaches it to the request.
-
-    Must be placed AFTER authentication middleware in MIDDLEWARE settings
-    so that request.user and request.auth are already populated.
-
-    MIDDLEWARE order example:
-        'django.contrib.auth.middleware.AuthenticationMiddleware',
-        'rest_framework_simplejwt.middleware...',   ← or DRF auth
-        'core.middleware.tenant_middleware.TenantMiddleware',   ← after auth
+    Wraps the request in a try/finally block to ensure strict context isolation.
     """
+    def __init__(self, get_response):
+        self.get_response = get_response
 
-    def process_request(self, request):
+    def __call__(self, request):
         request.empresa = None
         request.empresa_id = None
+        _tenant_token = None
 
         empresa_id = self._resolve_empresa_id(request)
+        
+        if empresa_id:
+            empresa = self._load_empresa(empresa_id)
+            if empresa:
+                request.empresa = empresa
+                request.empresa_id = empresa.id
+                # Set global context for automatic filtering
+                from core.utils.tenant_context import set_current_empresa
+                _tenant_token = set_current_empresa(empresa.id)
+            else:
+                logger.warning(
+                    "TenantMiddleware: empresa_id=%s not found or inactive.",
+                    empresa_id
+                )
 
-        if not empresa_id:
-            return  # Views/permissions will handle the missing tenant
-
-        empresa = self._load_empresa(empresa_id)
-        if empresa:
-            request.empresa = empresa
-            request.empresa_id = empresa.id
-        else:
-            logger.warning(
-                "TenantMiddleware: empresa_id=%s not found or inactive.",
-                empresa_id
-            )
+        try:
+            response = self.get_response(request)
+            return response
+        finally:
+            # Strictly clear context even if an exception occurred in the view
+            if _tenant_token:
+                from core.utils.tenant_context import reset_current_empresa
+                reset_current_empresa(_tenant_token)
+            else:
+                # If no token (early failure), ensure it's still clean
+                from core.utils.tenant_context import clear_current_empresa
+                clear_current_empresa()
 
     # ------------------------------------------------------------------
     # Private resolution helpers
@@ -105,9 +115,11 @@ class TenantMiddleware(MiddlewareMixin):
 
             token_str = auth_header.split(" ")[1]
             token = UntypedToken(token_str)
-            return token.payload.get("empresa_id")
-        except Exception:
-            # Token errors are handled by DRF authentication — we just skip here
+            eid = token.payload.get("empresa_id")
+            logger.debug("TenantMiddleware: JWT empresa_id=%s", eid)
+            return eid
+        except Exception as e:
+            logger.debug("TenantMiddleware: JWT extraction failed: %s", str(e))
             return None
 
     def _from_header(self, request):

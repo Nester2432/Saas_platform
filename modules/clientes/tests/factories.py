@@ -28,10 +28,14 @@ from modules.clientes.models import Cliente, EtiquetaCliente, NotaCliente
 # Core factories
 # ---------------------------------------------------------------------------
 
+from modules.billing.models import Plan, Suscripcion, EstadoSuscripcion
+from django.utils import timezone
+
 def make_empresa(**kwargs) -> Empresa:
     """
     Create and return a saved Empresa instance.
     Each call generates a unique slug so parallel tests don't collide.
+    Now also creates a default active subscription.
     """
     uid = uuid.uuid4().hex[:8]
     defaults = {
@@ -46,6 +50,23 @@ def make_empresa(**kwargs) -> Empresa:
 
     # Every empresa needs a configuracion for TenantMiddleware select_related
     EmpresaConfiguracion.objects.get_or_create(empresa=empresa)
+
+    # NEW: Create a default Plan and Suscripcion so SubscriptionGuardMiddleware doesn't block tests
+    plan, _ = Plan.objects.get_or_create(
+        slug="test-plan",
+        defaults={
+            "nombre": "Test Plan",
+            "precio_mensual": 0,
+            "activo": True
+        }
+    )
+    Suscripcion.objects.create(
+        empresa=empresa,
+        plan=plan,
+        estado=EstadoSuscripcion.ACTIVA,
+        fecha_inicio=timezone.now().date()
+    )
+
     return empresa
 
 

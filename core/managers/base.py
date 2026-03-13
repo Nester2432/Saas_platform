@@ -50,10 +50,21 @@ class TenantManager(models.Manager):
     """
 
     def get_queryset(self):
-        return TenantQuerySet(self.model, using=self._db)
+        from core.utils.tenant_context import get_current_empresa_id
+        qs = TenantQuerySet(self.model, using=self._db)
+        
+        # Automatic filtering if context is active
+        empresa_id = get_current_empresa_id()
+        if empresa_id:
+            qs = qs.for_empresa(empresa_id)
+            
+        return qs
 
     def for_empresa(self, empresa):
-        return self.get_queryset().for_empresa(empresa)
+        """
+        Explicitly filter by empresa, ignoring the global context if set.
+        """
+        return TenantQuerySet(self.model, using=self._db).for_empresa(empresa)
 
 
 class SoftDeleteTenantManager(models.Manager):
@@ -71,13 +82,44 @@ class SoftDeleteTenantManager(models.Manager):
     """
 
     def get_queryset(self):
-        return SoftDeleteTenantQuerySet(self.model, using=self._db).alive()
+        from core.utils.tenant_context import get_current_empresa
+        
+        qs = SoftDeleteTenantQuerySet(self.model, using=self._db).alive()
+        
+        # Automatic filtering if context is active
+        empresa_id = get_current_empresa()
+        if empresa_id:
+            qs = qs.for_empresa(empresa_id)
+            
+        return qs
 
     def with_deleted(self):
-        return SoftDeleteTenantQuerySet(self.model, using=self._db)
+        from core.utils.tenant_context import get_current_empresa
+        
+        qs = SoftDeleteTenantQuerySet(self.model, using=self._db)
+        
+        # Automatic filtering if context is active
+        empresa_id = get_current_empresa()
+        if empresa_id:
+            qs = qs.for_empresa(empresa_id)
+            
+        return qs
 
     def deleted_only(self):
-        return SoftDeleteTenantQuerySet(self.model, using=self._db).dead()
+        from core.utils.tenant_context import get_current_empresa
+        
+        qs = SoftDeleteTenantQuerySet(self.model, using=self._db).dead()
+        
+        # Automatic filtering if context is active
+        empresa_id = get_current_empresa()
+        if empresa_id:
+            qs = qs.for_empresa(empresa_id)
+            
+        return qs
 
     def for_empresa(self, empresa):
-        return self.get_queryset().for_empresa(empresa)
+        """
+        Explicitly filter by empresa, ignoring the global context if set.
+        Useful for internal tasks or cross-tenant operations.
+        """
+        return SoftDeleteTenantQuerySet(self.model, using=self._db).alive().for_empresa(empresa)

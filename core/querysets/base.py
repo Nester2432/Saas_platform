@@ -43,8 +43,10 @@ class SoftDeleteQuerySet(models.QuerySet):
         """
         Soft delete: sets deleted_at=now() on all matched records.
         Does NOT remove rows from the database.
+        Returns a tuple: (count, {model_label: count})
         """
-        return self.update(deleted_at=timezone.now())
+        count = self.update(deleted_at=timezone.now())
+        return count, {self.model._meta.label: count}
 
     def hard_delete(self):
         """Permanently delete all records in the queryset. Use with caution."""
