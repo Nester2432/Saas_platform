@@ -1,0 +1,84 @@
+{% extends "events/base_demo.html" %}
+
+{% block title %}Suscripción | GravitySaaS{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 32px;">
+    <h1 style="margin: 0; font-size: 2rem;">Planes y Facturación</h1>
+    <p style="color: var(--text-muted); margin: 4px 0 0 0;">Gestiona tu suscripción, revisa consumos y escala tu negocio.</p>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px;">
+    <!-- Plan Actual -->
+    <div class="card" style="border: 1px solid var(--primary); background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.1), transparent);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <span class="badge badge-success" style="margin-bottom: 12px;">ACTIVO</span>
+                <h2 style="margin: 0; font-size: 1.75rem; color: var(--primary-light);">Plan Enterprise B2B</h2>
+                <p style="color: var(--text-muted); margin-top: 8px;">Facturación mensual recurrente</p>
+            </div>
+            <div style="text-align: right;">
+                <div style="font-size: 2rem; font-weight: 700;">$599</div>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">USD / mes</div>
+            </div>
+        </div>
+
+        <div style="margin-top: 32px; border-top: 1px solid var(--border); padding-top: 24px;">
+            <h3 style="font-size: 1rem; margin-bottom: 16px;">Incluido en tu plan:</h3>
+            <ul style="list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 0.9rem;">
+                <li style="display: flex; gap: 8px; align-items: center;">✅ Throttling Personalizado</li>
+                <li style="display: flex; gap: 8px; align-items: center;">✅ Soporte Multi-tenant</li>
+                <li style="display: flex; gap: 8px; align-items: center;">✅ API Ilimitada</li>
+                <li style="display: flex; gap: 8px; align-items: center;">✅ Auditoría Full</li>
+            </ul>
+        </div>
+
+        <div style="margin-top: 32px; display: flex; gap: 12px;">
+            <button class="btn btn-primary" style="flex: 1;">Administrar en Stripe</button>
+            <button class="btn btn-outline">Cambiar Plan</button>
+        </div>
+    </div>
+
+    <!-- Uso de Limites -->
+    <div class="card">
+        <h2 style="margin-top: 0; font-size: 1.25rem; margin-bottom: 24px;">Uso de Recursos</h2>
+        
+        <div style="margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 8px;">
+                <span>Usuarios</span>
+                <span style="font-weight: 600;">12 / 50</span>
+            </div>
+            <div style="height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden;">
+                <div style="width: 24%; height: 100%; background: var(--primary);"></div>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 8px;">
+                <span>Llamadas API (mensual)</span>
+                <span style="font-weight: 600;">45.2k / 100k</span>
+            </div>
+            <div style="height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden;">
+                <div style="width: 45%; height: 100%; background: var(--primary-light);"></div>
+            </div>
+        </div>
+
+        <div style="margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 8px;">
+                <span>Almacenamiento de Documentos</span>
+                <span style="font-weight: 600;">1.2 GB / 10 GB</span>
+            </div>
+            <div style="height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden;">
+                <div style="width: 12%; height: 100%; background: var(--secondary);"></div>
+            </div>
+        </div>
+
+        <div style="background: rgba(255,255,255,0.03); padding: 16px; border-radius: 12px; margin-top: 12px;">
+            <p style="margin: 0; font-size: 0.8rem; color: var(--text-muted);">
+                <b>Proxima facturación:</b> 01 de Abril, 2026. <br>
+                Se aplicará cargo automático a la tarjeta terminada en **4242.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

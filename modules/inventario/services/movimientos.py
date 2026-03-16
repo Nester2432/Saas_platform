@@ -691,7 +691,7 @@ class MovimientoService:
 
         EventBus.publish(
             events.STOCK_ACTUALIZADO,
-            empresa_id=empresa.id,
+            empresa_id=empresa,
             usuario_id=usuario.id if usuario else None,
             recurso="producto",
             recurso_id=producto.id,

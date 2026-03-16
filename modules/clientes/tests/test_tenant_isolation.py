@@ -1,12 +1,12 @@
 from django.test import TestCase
-from apps.empresas.models import Empresa
 from modules.clientes.models import Cliente
 from core.utils.tenant_context import set_current_empresa, reset_current_empresa
+from modules.clientes.tests.factories import make_empresa
 
 class TenantIsolationTest(TestCase):
     def setUp(self):
-        self.empresa_a = Empresa.objects.create(nombre="Empresa A", slug="a", plan="free")
-        self.empresa_b = Empresa.objects.create(nombre="Empresa B", slug="b", plan="free")
+        self.empresa_a = make_empresa(nombre="Empresa A", slug="a")
+        self.empresa_b = make_empresa(nombre="Empresa B", slug="b")
         
         # Create a client for Empresa A
         self.cliente_a = Cliente.objects.create(

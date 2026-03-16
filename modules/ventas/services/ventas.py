@@ -70,6 +70,7 @@ from django.db import models, transaction
 from django.db.models import Sum
 from django.utils import timezone
 
+from modules.inventario.models import Producto
 from modules.inventario.services import MovimientoService
 from modules.billing.services.billing_service import BillingService
 from modules.ventas.exceptions import (
@@ -122,6 +123,27 @@ class VentaService:
     # Public API — creation and editing (BORRADOR phase)
     # ─────────────────────────────────────────────────────────────────────────
 
+
+_TRANSICIONES_VALIDAS: set[tuple[str, str]] = {
+    (EstadoVenta.BORRADOR,   EstadoVenta.CONFIRMADA),
+    (EstadoVenta.BORRADOR,   EstadoVenta.CANCELADA),
+    (EstadoVenta.CONFIRMADA, EstadoVenta.PAGADA),
+    (EstadoVenta.CONFIRMADA, EstadoVenta.CANCELADA),
+    (EstadoVenta.CONFIRMADA, EstadoVenta.DEVUELTA),
+    (EstadoVenta.PAGADA,     EstadoVenta.CANCELADA),
+    (EstadoVenta.PAGADA,     EstadoVenta.DEVUELTA),
+}
+
+
+class VentaService:
+    """
+    Mutation service for Venta lifecycle management.
+    
+    All methods are static — no instance state, fully thread-safe.
+    All public methods are @transaction.atomic.
+    """
+
+    # ── Public API — creation and editing (BORRADOR phase) ─────────────────
     @staticmethod
     @transaction.atomic
     def crear_venta(
@@ -187,7 +209,7 @@ class VentaService:
 
         EventBus.publish(
             events.VENTA_CREADA,
-            empresa_id=empresa.id,
+            empresa_id=empresa,
             usuario_id=usuario.id if usuario else None,
             recurso="venta",
             recurso_id=venta.id,
@@ -195,7 +217,6 @@ class VentaService:
         )
         
         return venta
-
     @staticmethod
     @transaction.atomic
     def agregar_linea(
@@ -296,7 +317,6 @@ class VentaService:
         VentaService._recalcular_totales(venta, usuario=usuario)
 
         return linea
-
     @staticmethod
     @transaction.atomic
     def quitar_linea(empresa, venta: Venta, linea: LineaVenta, usuario=None) -> None:
@@ -331,7 +351,6 @@ class VentaService:
     # ─────────────────────────────────────────────────────────────────────────
     # Public API — state transitions
     # ─────────────────────────────────────────────────────────────────────────
-
     @staticmethod
     @transaction.atomic
     def confirmar_venta(
@@ -386,7 +405,7 @@ class VentaService:
         lineas = list(
             venta.lineas
             .select_related("producto")
-            .order_by("orden")
+            .order_by("producto_id")
         )
         if not lineas:
             raise VentaSinLineasError(venta)
@@ -396,7 +415,14 @@ class VentaService:
         venta.numero = numero
 
         # Step 4 — reduce stock
-        # All salidas are inside this @transaction.atomic block.
+        # Acquire all locks in bulk FIRST to prevent deadlocks and fail fast.
+        # We sort by ID to ensure a consistent locking order across all transactions.
+        productos_ids = sorted(list({l.producto_id for l in lineas if l.producto_id}))
+        if productos_ids:
+            # This query acquires the row-level locks for all products in the sale.
+            # Subsequent calls to MovimientoService will find these locks already held.
+            list(Producto.objects.select_for_update().filter(id__in=productos_ids, empresa=empresa).order_by("id"))
+
         # If line K fails, lines 0..K-1 roll back automatically.
         for linea in lineas:
             if linea.producto_id:
@@ -449,7 +475,7 @@ class VentaService:
 
         EventBus.publish(
             events.VENTA_CONFIRMADA,
-            empresa_id=empresa.id,
+            empresa_id=empresa,
             usuario_id=usuario.id if usuario else None,
             recurso="venta",
             recurso_id=venta.id,
@@ -463,7 +489,7 @@ class VentaService:
         if nuevo_estado == EstadoVenta.PAGADA:
             EventBus.publish(
                 events.VENTA_PAGADA,
-                empresa_id=empresa.id,
+                empresa_id=empresa,
                 usuario_id=usuario.id if usuario else None,
                 recurso="venta",
                 recurso_id=venta.id,
@@ -473,7 +499,76 @@ class VentaService:
 
         return venta
 
+    @staticmethod
+    @transaction.atomic
+    def cancelar_venta(
+        empresa,
+        venta: Venta,
+        motivo: str = "",
+        usuario=None,
+    ) -> Venta:
+        """
+        Cancel a sale. Restores stock if the sale was already CONFIRMADA or PAGADA.
 
+        BORRADOR → CANCELADA: no stock to restore, just a state change.
+        CONFIRMADA / PAGADA → CANCELADA: one DEVOLUCION movement per line
+            with producto, undoing every SALIDA registered at confirmation.
+
+        Args:
+            empresa: Tenant.
+            venta:   Sale to cancel. Must be BORRADOR, CONFIRMADA, or PAGADA.
+            motivo:  Reason for cancellation.
+            usuario: Audit user.
+
+        Returns:
+            Venta in CANCELADA state.
+
+        Raises:
+            TransicionVentaInvalidaError: if venta is terminal (CANCELADA/DEVUELTA).
+        """
+        VentaService._validar_transicion(venta, EstadoVenta.CANCELADA)
+        VentaService._validar_tenant_venta(empresa, venta)
+
+        stock_confirmado = venta.estado in (
+            EstadoVenta.CONFIRMADA, EstadoVenta.PAGADA
+        )
+
+        if stock_confirmado:
+            lineas = list(
+                venta.lineas
+                .select_related("producto")
+                .filter(producto__isnull=False)
+            )
+            for linea in lineas:
+                MovimientoService.registrar_devolucion(
+                    empresa         = empresa,
+                    producto        = linea.producto,
+                    cantidad        = linea.cantidad,
+                    referencia_tipo = "cancelacion_venta",
+                    referencia_id   = venta.id,
+                    motivo          = f"Cancelación venta {venta.numero}: {motivo}",
+                    usuario         = usuario,
+                )
+
+        venta.estado     = EstadoVenta.CANCELADA
+        venta.notas      = f"{venta.notas}\n[CANCELADA] {motivo}".strip()
+        venta.updated_by = usuario
+        venta.save(update_fields=["estado", "notas", "updated_by", "updated_at"])
+
+        EventBus.publish(
+            events.VENTA_CANCELADA,
+            empresa_id=empresa,
+            usuario_id=usuario.id if usuario else None,
+            recurso="venta",
+            recurso_id=venta.id,
+            numero=venta.numero,
+            motivo=motivo
+        )
+
+        return venta
+
+
+    # ── Public API — payments ─────────────────────────────────────────────
     @staticmethod
     @transaction.atomic
     def registrar_pago(
@@ -550,75 +645,43 @@ class VentaService:
             empresa.id, venta.id, monto, metodo_pago, saldo,
         )
         return pago
-
     @staticmethod
     @transaction.atomic
-    def cancelar_venta(
-        empresa,
-        venta: Venta,
-        motivo: str = "",
-        usuario=None,
-    ) -> Venta:
+    def marcar_como_pagada(empresa, venta: Venta, usuario=None) -> Venta:
         """
-        Cancel a sale. Restores stock if the sale was already CONFIRMADA or PAGADA.
+        Finalize a sale as PAGADA and publish a VENTA_PAGADA event.
 
-        BORRADOR → CANCELADA: no stock to restore, just a state change.
-        CONFIRMADA / PAGADA → CANCELADA: one DEVOLUCION movement per line
-            with producto, undoing every SALIDA registered at confirmation.
-
-        Args:
-            empresa: Tenant.
-            venta:   Sale to cancel. Must be BORRADOR, CONFIRMADA, or PAGADA.
-            motivo:  Reason for cancellation.
-            usuario: Audit user.
-
-        Returns:
-            Venta in CANCELADA state.
-
-        Raises:
-            TransicionVentaInvalidaError: if venta is terminal (CANCELADA/DEVUELTA).
+        Called automatically when Σ(pagos) >= Venta.total.
+        The VENTA_PAGADA event triggers auto-invoice generation via facturacion_handler.
         """
-        VentaService._validar_transicion(venta, EstadoVenta.CANCELADA)
-        VentaService._validar_tenant_venta(empresa, venta)
+        if venta.estado == EstadoVenta.PAGADA:
+            return venta
 
-        stock_confirmado = venta.estado in (
-            EstadoVenta.CONFIRMADA, EstadoVenta.PAGADA
-        )
-
-        if stock_confirmado:
-            lineas = list(
-                venta.lineas
-                .select_related("producto")
-                .filter(producto__isnull=False)
-            )
-            for linea in lineas:
-                MovimientoService.registrar_devolucion(
-                    empresa         = empresa,
-                    producto        = linea.producto,
-                    cantidad        = linea.cantidad,
-                    referencia_tipo = "cancelacion_venta",
-                    referencia_id   = venta.id,
-                    motivo          = f"Cancelación venta {venta.numero}: {motivo}",
-                    usuario         = usuario,
-                )
-
-        venta.estado     = EstadoVenta.CANCELADA
-        venta.notas      = f"{venta.notas}\n[CANCELADA] {motivo}".strip()
+        venta.estado = EstadoVenta.PAGADA
         venta.updated_by = usuario
-        venta.save(update_fields=["estado", "notas", "updated_by", "updated_at"])
+        venta.save(update_fields=["estado", "updated_by", "updated_at"])
+
+        logger.info("VENTA MARCADA COMO PAGADA: empresa=%s venta=%s", empresa.id, venta.id)
 
         EventBus.publish(
-            events.VENTA_CANCELADA,
-            empresa_id=empresa.id,
+            events.VENTA_PAGADA,
+            empresa_id=empresa,
             usuario_id=usuario.id if usuario else None,
             recurso="venta",
             recurso_id=venta.id,
             numero=venta.numero,
-            motivo=motivo
+            total=float(venta.total),
         )
 
         return venta
 
+
+    # ─────────────────────────────────────────────────────────────────────────
+    # Private helpers
+    # ─────────────────────────────────────────────────────────────────────────
+
+
+    # ── Public API — returns ──────────────────────────────────────────────
     @staticmethod
     @transaction.atomic
     def registrar_devolucion(
@@ -705,6 +768,11 @@ class VentaService:
 
         total_devuelto = Decimal("0")
 
+        # Bulk lock products before processing the return line-by-line.
+        productos_ids = sorted(list({item["linea_venta"].producto_id for item in items if item["linea_venta"].producto_id}))
+        if productos_ids:
+            list(Producto.objects.select_for_update().filter(id__in=productos_ids, empresa=empresa).order_by("id"))
+
         for item in items:
             linea: LineaVenta = item["linea_venta"]
             cantidad: int     = item["cantidad"]
@@ -751,41 +819,8 @@ class VentaService:
         )
         return devolucion
 
-    @staticmethod
-    @transaction.atomic
-    def marcar_como_pagada(empresa, venta: Venta, usuario=None) -> Venta:
-        """
-        Finalize a sale as PAGADA and publish a VENTA_PAGADA event.
 
-        Called automatically when Σ(pagos) >= Venta.total.
-        The VENTA_PAGADA event triggers auto-invoice generation via facturacion_handler.
-        """
-        if venta.estado == EstadoVenta.PAGADA:
-            return venta
-
-        venta.estado = EstadoVenta.PAGADA
-        venta.updated_by = usuario
-        venta.save(update_fields=["estado", "updated_by", "updated_at"])
-
-        logger.info("VENTA MARCADA COMO PAGADA: empresa=%s venta=%s", empresa.id, venta.id)
-
-        EventBus.publish(
-            events.VENTA_PAGADA,
-            empresa_id=empresa.id,
-            usuario_id=usuario.id if usuario else None,
-            recurso="venta",
-            recurso_id=venta.id,
-            numero=venta.numero,
-            total=float(venta.total),
-        )
-
-        return venta
-
-
-    # ─────────────────────────────────────────────────────────────────────────
-    # Private helpers
-    # ─────────────────────────────────────────────────────────────────────────
-
+    # ── Private helpers ───────────────────────────────────────────────────
     @staticmethod
     def _siguiente_numero(empresa) -> str:
         """
@@ -816,7 +851,6 @@ class VentaService:
 
         year = timezone.now().year
         return f"V-{year}-{seq.ultimo_numero:04d}"
-
     @staticmethod
     def _recalcular_totales(venta: Venta, usuario=None) -> None:
         """
@@ -846,7 +880,6 @@ class VentaService:
                 "updated_by", "updated_at",
             ]
         )
-
     @staticmethod
     def _validar_transicion(venta: Venta, estado_destino: str) -> None:
         """
@@ -859,7 +892,6 @@ class VentaService:
                 estado_actual  = venta.estado,
                 estado_destino = estado_destino,
             )
-
     @staticmethod
     def _validar_editable(venta: Venta) -> None:
         """Raise TransicionVentaInvalidaError if venta is not BORRADOR."""
@@ -872,7 +904,6 @@ class VentaService:
                     f"Estado actual: {venta.estado}."
                 ),
             )
-
     @staticmethod
     def _validar_tenant_venta(empresa, venta: Venta) -> None:
         if str(venta.empresa_id) != str(empresa.id):
@@ -880,7 +911,6 @@ class VentaService:
                 "La venta no pertenece a esta empresa.",
                 code="tenant_mismatch",
             )
-
     @staticmethod
     def _validar_tenant_cliente(empresa, cliente) -> None:
         if cliente is not None and str(cliente.empresa_id) != str(empresa.id):
@@ -888,7 +918,6 @@ class VentaService:
                 "El cliente no pertenece a esta empresa.",
                 code="tenant_mismatch",
             )
-
     @staticmethod
     def _validar_tenant_turno(empresa, turno) -> None:
         if turno is not None and str(turno.empresa_id) != str(empresa.id):
@@ -896,7 +925,6 @@ class VentaService:
                 "El turno no pertenece a esta empresa.",
                 code="tenant_mismatch",
             )
-
     @staticmethod
     def _validar_tenant_producto(empresa, producto) -> None:
         if str(producto.empresa_id) != str(empresa.id):
@@ -904,7 +932,6 @@ class VentaService:
                 "El producto no pertenece a esta empresa.",
                 code="tenant_mismatch",
             )
-
     @staticmethod
     def _validar_items_devolucion(venta: Venta, items: list[dict]) -> None:
         """
@@ -956,7 +983,6 @@ class VentaService:
                     f"Disponible para devolución: {disponible} "
                     f"(vendido: {linea.cantidad}, ya devuelto: {ya_devuelto})."
                 )
-
     @staticmethod
     def _es_devolucion_total(venta: Venta) -> bool:
         """
@@ -976,7 +1002,6 @@ class VentaService:
             if ya_devuelto < linea.cantidad:
                 return False
         return True
-
     @staticmethod
     def _snapshot_cliente(cliente) -> dict:
         """

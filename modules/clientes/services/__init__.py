@@ -36,26 +36,23 @@ class ClienteService:
 
     @staticmethod
     @transaction.atomic
-    def crear_cliente(empresa, datos: dict, usuario=None) -> Cliente:
+    def crear_cliente(empresa, datos: dict, usuario=None, etiqueta_ids: list = None) -> Cliente:
         """
         Create a new Cliente for the given empresa.
 
         Validates:
         - email uniqueness within the empresa (if email provided)
+        - plan limits (billing integration)
 
         Registers:
         - HistorialCliente(CREATED) automatically
+        - HistorialCliente(TAG_ADDED) for each initial tag
 
         Args:
-            empresa:  Empresa instance (tenant)
-            datos:    dict with validated field values
-            usuario:  Usuario who is creating (for audit trail)
-
-        Returns:
-            Cliente instance (saved)
-
-        Raises:
-            ValidationError if email already exists for this empresa
+            empresa:      Empresa instance (tenant)
+            datos:        dict with validated field values
+            usuario:      Usuario who is creating (for audit trail)
+            etiqueta_ids: list of UUIDs for initial tags
         """
         email = datos.get("email", "").strip()
 
@@ -73,6 +70,12 @@ class ClienteService:
         )
         cliente.full_clean()
         cliente.save()
+
+        # Handle initial tags
+        if etiqueta_ids:
+            etiquetas = EtiquetaCliente.objects.for_empresa(empresa).filter(id__in=etiqueta_ids)
+            for etiqueta in etiquetas:
+                ClienteService.agregar_etiqueta(cliente, etiqueta, usuario)
 
         ClienteService.registrar_evento(
             empresa=empresa,

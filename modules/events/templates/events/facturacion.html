@@ -1,0 +1,63 @@
+{% extends "events/base_demo.html" %}
+
+{% block title %}Facturación | GravitySaaS{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 32px;">
+    <div>
+        <h1 style="margin: 0; font-size: 2rem;">Facturación Electrónica</h1>
+        <p style="color: var(--text-muted); margin: 4px 0 0 0;">Historial de comprobantes emitidos y estado de sincronización fiscal.</p>
+    </div>
+    <div style="display: flex; gap: 12px;">
+        <button class="btn btn-outline">📥 Exportar Reporte</button>
+        <button class="btn btn-primary" onclick="showToast('Sincronización fiscal activa', 'success')">🔄 Sincronizar AFIP/Tax Authority</button>
+    </div>
+</div>
+
+<div class="card">
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="text-align: left; color: var(--text-muted); font-size: 0.8rem; border-bottom: 1px solid var(--border);">
+                <th style="padding: 12px 16px;">Nº FACTURA</th>
+                <th style="padding: 12px 16px;">DOC. VENTA</th>
+                <th style="padding: 12px 16px;">FECHA EMISIÓN</th>
+                <th style="padding: 12px 16px;">TOTAL</th>
+                <th style="padding: 12px 16px;">ESTADO FISCAL</th>
+                <th style="padding: 12px 16px;">ACCIONES</th>
+            </tr>
+        </thead>
+        <tbody id="facturas-body">
+            <!-- Dynamic content -->
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    async function loadFacturas() {
+        const res = await fetch('/api/v1/events/demo/resources/');
+        const data = await res.json();
+        const body = document.getElementById('facturas-body');
+        
+        if (data.recent_resources && data.recent_resources.facturas) {
+            body.innerHTML = data.recent_resources.facturas.map(f => `
+                <tr style="border-bottom: 1px solid var(--border);">
+                    <td style="padding: 16px;">
+                        <span style="font-weight: 600;">${f.numero}</span>
+                    </td>
+                    <td style="padding: 16px; color: var(--text-muted); font-size: 0.85rem;">Venta Link: ${f.id.substring(0,6)}...</td>
+                    <td style="padding: 16px; color: var(--text-muted); font-size: 0.85rem;">${new Date(f.created_at).toLocaleDateString()}</td>
+                    <td style="padding: 16px; font-weight: 600;">$${parseFloat(f.total).toFixed(2)}</td>
+                    <td style="padding: 16px;"><span class="badge badge-success">Autorizada</span></td>
+                    <td style="padding: 16px;">
+                        <button class="btn btn-outline btn-sm" onclick="showToast('Descargando PDF...', 'info')">📥 PDF</button>
+                    </td>
+                </tr>
+            `).join('') || '<tr><td colspan="6" style="padding: 24px; text-align: center; color: var(--text-muted);">No se encontraron facturas emitidas</td></tr>';
+        }
+    }
+
+    loadFacturas();
+</script>
+{% endblock %}

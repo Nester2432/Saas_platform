@@ -9,13 +9,13 @@ from modules.billing.models import Plan, Suscripcion
 def plan_pro():
     """Create a default Pro plan for tests."""
     plan, _ = Plan.objects.get_or_create(
-        slug="pro",
+        nombre="Pro Plan",
         defaults={
-            "nombre": "Pro Plan",
             "precio_mensual": Decimal("50.00"),
-            "limite_usuarios": 10,
-            "limite_productos": 100,
-            "limite_ventas_mes": 1000,
+            "precio_anual": Decimal("500.00"),
+            "max_usuarios": 10,
+            "max_clientes": 200,
+            "max_productos": 100,
             "activo": True
         }
     )
@@ -26,24 +26,14 @@ def empresa(plan_pro):
     emp = make_empresa()
     activar_modulo(emp, "billing")
     activar_modulo(emp, "ventas")
-    Suscripcion.objects.create(
-        empresa=emp,
-        plan=plan_pro,
-        estado="ACTIVA",
-        fecha_inicio=timezone.now().date()
-    )
+    Suscripcion.objects.filter(empresa=emp).update(plan=plan_pro, estado="ACTIVE", fecha_inicio=timezone.now().date())
     return emp
 
 @pytest.fixture
 def empresa_secundaria(plan_pro):
     emp = make_empresa(nombre="Empresa Secundaria")
     activar_modulo(emp, "billing")
-    Suscripcion.objects.create(
-        empresa=emp,
-        plan=plan_pro,
-        estado="ACTIVA",
-        fecha_inicio=timezone.now().date()
-    )
+    Suscripcion.objects.filter(empresa=emp).update(plan=plan_pro, estado="ACTIVE", fecha_inicio=timezone.now().date())
     return emp
 
 @pytest.fixture

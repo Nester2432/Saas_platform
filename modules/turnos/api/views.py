@@ -567,7 +567,9 @@ class TurnoViewSet(TenantQuerysetMixin, viewsets.GenericViewSet):
         The empresa scope in the queryset prevents cross-tenant access without
         requiring an explicit permission check in each action method.
         """
-        return get_object_or_404(
+        obj = get_object_or_404(
             _turno_queryset(self.request.empresa),
             id=pk,
         )
+        self.check_object_permissions(self.request, obj)
+        return obj

@@ -122,14 +122,36 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     def tiene_permiso(self, permiso_codigo):
         """
         Check if this user has a specific permission via their roles.
-        Cached per-request in production via @cached_property or Redis.
+        Cached for performance (Redis in production, instance-memory in tests).
         """
-        if self.rol == self.RolUsuario.ADMIN:
+        if self.rol == self.RolUsuario.ADMIN or self.is_empresa_admin:
             return True
-        return self.roles.filter(
-            permisos__codigo=permiso_codigo,
-            empresa=self.empresa
-        ).exists()
+
+        if not hasattr(self, "_permisos_set"):
+            from django.core.cache import cache
+            from django.conf import settings
+            
+            # In tests, persistent cache can cause state leakage between test cases.
+            is_testing = getattr(settings, "TESTING", False)
+            cache_key = f"user_perms:{self.id}"
+            perms = None
+            
+            if not is_testing:
+                perms = cache.get(cache_key)
+            
+            if perms is None:
+                # Fetch all unique permission codes for all roles assigned to this user
+                perms = list(
+                    Permiso.objects.filter(
+                        roles__usuarios=self
+                    ).values_list("codigo", flat=True).distinct()
+                )
+                if not is_testing:
+                    cache.set(cache_key, perms, 3600)  # 1 hour cache
+            
+            self._permisos_set = set(perms)
+
+        return permiso_codigo in self._permisos_set
 
     def __str__(self):
         return f"{self.nombre_completo} <{self.email}>"

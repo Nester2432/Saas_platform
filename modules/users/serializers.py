@@ -28,8 +28,8 @@ class UserCreateSerializer(serializers.ModelSerializer):
         ]
 
     def create(self, validated_data):
-        # Extract empresa from context (injected by the view)
-        empresa = self.context["request"].empresa
+        # Extract empresa from context or validated_data (if injected by save())
+        empresa = validated_data.pop("empresa", None) or self.context["request"].empresa
         password = validated_data.pop("password")
         
         # We manually construct the user to ensure it's bound strictly to the tenant

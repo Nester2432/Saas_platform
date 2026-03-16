@@ -35,7 +35,7 @@ urlpatterns = [
     path("api/v1/", include("modules.clientes.urls")),
     path("api/v1/", include("modules.turnos.urls")),
     path("api/v1/", include("modules.ventas.urls")),
-    path("api/v1/pagos/", include("modules.pagos.urls")),
+    path("api/v1/cobranzas/", include("modules.cobranzas.urls")),
     path("api/v1/facturacion/", include("modules.facturacion.urls")),
     path("api/v1/", include("modules.inventario.urls")),
     path("api/v1/billing/", include("modules.billing.urls")),

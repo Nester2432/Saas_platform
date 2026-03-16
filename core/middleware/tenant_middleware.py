@@ -93,6 +93,11 @@ class TenantMiddleware:
         # if empresa_id:
         #     return empresa_id
 
+        # Strategy 4: Auth User (Fallback for session-based access / Demo UI)
+        empresa_id = self._from_user(request)
+        if empresa_id:
+            return empresa_id
+
         return None
 
     def _from_jwt(self, request):
@@ -128,6 +133,17 @@ class TenantMiddleware:
         Useful for testing and internal service calls.
         """
         return request.META.get("HTTP_X_EMPRESA_ID")
+
+    def _from_user(self, request):
+        """
+        Extract empresa_id from the authenticated user object.
+        Useful for session-based access to the web UI.
+        """
+        if request.user.is_authenticated:
+            eid = getattr(request.user, "empresa_id", None)
+            if eid:
+                return str(eid)
+        return None
 
     def _from_subdomain(self, request):
         """

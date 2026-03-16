@@ -250,6 +250,8 @@ class DemoResourcesView(APIView):
                     {
                         "id": str(c.id), 
                         "nombre": getattr(c, "nombre_completo", f"{c.nombre} {c.apellido}"), 
+                        "email": c.email,
+                        "telefono": c.telefono,
                         "created_at": c.created_at
                     } for c in clientes
                 ],
@@ -344,6 +346,7 @@ class DemoActionView(APIView):
         from modules.ventas.services.ventas import VentaService
         from modules.ventas.models import Venta
         from modules.clientes.models import Cliente
+        from django.core.exceptions import ValidationError
 
         user = request.user
         empresa = getattr(user, "empresa", None)
@@ -358,8 +361,11 @@ class DemoActionView(APIView):
 
         try:
             if action == "crear_cliente":
-                nombre = data.get("nombre", "Cliente Manual")
-                email = data.get("email") or f"manual_{int(time.time())}@example.com"
+                # Ensure we have clean data
+                nombre = str(data.get("nombre", "")).strip() or "Cliente Manual"
+                raw_email = str(data.get("email", "")).strip()
+                email = raw_email or f"manual_{int(time.time())}@example.com"
+                
                 cliente = ClienteService().crear_cliente(
                     empresa=empresa,
                     datos={"nombre": nombre, "email": email},
@@ -399,9 +405,9 @@ class DemoActionView(APIView):
             elif action == "confirmar_venta":
                 venta_id = data.get("venta_id")
                 venta = Venta.objects.get(id=venta_id, empresa=empresa)
-                VentaService.confirmar_venta(empresa=empresa, venta=venta, usuario=user)
+                VentaService.confirmar_venta(venta, usuario=user)
                 return Response({
-                    "message": "Venta confirmada con éxito",
+                    "message": "Venta confirmada",
                     "id": str(venta.id),
                     **(_get_event_status(events.VENTA_CONFIRMADA, empresa.id) or {})
                 })
@@ -420,20 +426,92 @@ class DemoActionView(APIView):
             else:
                 return Response({"error": f"Acción desconocida: {action}"}, status=status.HTTP_400_BAD_REQUEST)
 
+        except ValidationError as e:
+            return Response({
+                "error": "Error de validación",
+                "details": e.message_dict if hasattr(e, "message_dict") else str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             logger.exception(f"Error en acción manual {action}")
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class DemoDashboardView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
-    """
-    GET /events/demo/dashboard/
-    Serves the HTML dashboard for the demo.
-    """
-    template_name = "events/demo_dashboard.html"
-    login_url = "/admin/login/"  # Redirect here if not logged in
-    
+    template_name = "events/dashboard.html"
+    login_url = "/admin/login/"
     def test_func(self):
-        """Check if the user has permission to access the dashboard."""
-        user = self.request.user
-        return user.is_staff or getattr(user, "is_empresa_admin", False)
+        return self.request.user.is_staff or getattr(self.request.user, "is_empresa_admin", False)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["active_page"] = "dashboard"
+        return context
+
+class DemoClientesView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = "events/clientes.html"
+    login_url = "/admin/login/"
+    def test_func(self):
+        return self.request.user.is_staff or getattr(self.request.user, "is_empresa_admin", False)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["active_page"] = "clientes"
+        return context
+
+class DemoVentasView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = "events/ventas.html"
+    login_url = "/admin/login/"
+    def test_func(self):
+        return self.request.user.is_staff or getattr(self.request.user, "is_empresa_admin", False)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["active_page"] = "ventas"
+        return context
+
+class DemoInventarioView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = "events/inventario.html"
+    login_url = "/admin/login/"
+    def test_func(self):
+        return self.request.user.is_staff or getattr(self.request.user, "is_empresa_admin", False)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["active_page"] = "inventario"
+        return context
+
+class DemoFacturacionView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = "events/facturacion.html"
+    login_url = "/admin/login/"
+    def test_func(self):
+        return self.request.user.is_staff or getattr(self.request.user, "is_empresa_admin", False)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["active_page"] = "facturacion"
+        return context
+
+class DemoAgendaView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = "events/agenda.html"
+    login_url = "/admin/login/"
+    def test_func(self):
+        return self.request.user.is_staff or getattr(self.request.user, "is_empresa_admin", False)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["active_page"] = "agenda"
+        return context
+
+class DemoBillingView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = "events/billing.html"
+    login_url = "/admin/login/"
+    def test_func(self):
+        return self.request.user.is_staff or getattr(self.request.user, "is_empresa_admin", False)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["active_page"] = "billing"
+        return context
+
+class DemoEventosView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = "events/event_log.html"
+    login_url = "/admin/login/"
+    def test_func(self):
+        return self.request.user.is_staff or getattr(self.request.user, "is_empresa_admin", False)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["active_page"] = "eventos"
+        return context

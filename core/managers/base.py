@@ -17,6 +17,7 @@ Correct usage pattern:
 """
 
 from django.db import models
+import auto_prefetch
 from core.querysets.base import (
     SoftDeleteQuerySet,
     TenantQuerySet,
@@ -24,7 +25,7 @@ from core.querysets.base import (
 )
 
 
-class SoftDeleteManager(models.Manager):
+class SoftDeleteManager(auto_prefetch.Manager):
     """
     Manager for models with soft delete only (no tenant scoping).
     Used for non-tenant models like Modulo, Rol, etc.
@@ -43,7 +44,7 @@ class SoftDeleteManager(models.Manager):
         return SoftDeleteQuerySet(self.model, using=self._db).dead()
 
 
-class TenantManager(models.Manager):
+class TenantManager(auto_prefetch.Manager):
     """
     Manager for models with tenant scoping only (no soft delete).
     Rare — prefer SoftDeleteTenantManager for business models.
@@ -67,7 +68,7 @@ class TenantManager(models.Manager):
         return TenantQuerySet(self.model, using=self._db).for_empresa(empresa)
 
 
-class SoftDeleteTenantManager(models.Manager):
+class SoftDeleteTenantManager(auto_prefetch.Manager):
     """
     Standard manager for all business models.
 

@@ -43,7 +43,7 @@ from modules.ventas.services import VentaService
 # Core platform factories (mirrors inventario/tests/factories.py)
 # ─────────────────────────────────────────────────────────────────────────────
 
-from modules.billing.models import Plan, Suscripcion, EstadoSuscripcion
+from modules.billing.models import Plan, Suscripcion, EstadoSuscripcion, EstadoSuscripcion
 from django.utils import timezone
 
 def make_empresa(**kwargs) -> Empresa:
@@ -52,27 +52,22 @@ def make_empresa(**kwargs) -> Empresa:
         "nombre":    f"Empresa Test {uid}",
         "slug":      f"empresa-{uid}",
         "email":     f"admin@empresa-{uid}.com",
-        "plan":      Empresa.Plan.PROFESSIONAL,
         "is_active": True,
     }
     defaults.update(kwargs)
-    empresa = Empresa.objects.create(**defaults)
-    EmpresaConfiguracion.objects.get_or_create(empresa=empresa)
-
     plan, _ = Plan.objects.get_or_create(
-        slug="test-plan",
+        nombre="Test Plan",
         defaults={
+
             "nombre": "Test Plan",
             "precio_mensual": 0,
             "activo": True
         }
     )
-    Suscripcion.objects.create(
-        empresa=empresa,
-        plan=plan,
-        estado=EstadoSuscripcion.ACTIVA,
-        fecha_inicio=timezone.now().date()
-    )
+    empresa = Empresa.objects.create(**defaults)
+    EmpresaConfiguracion.objects.get_or_create(empresa=empresa)
+
+    Suscripcion.objects.filter(empresa=empresa).update(plan=plan, estado="ACTIVE", fecha_inicio=timezone.now().date())
 
     return empresa
 

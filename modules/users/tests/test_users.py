@@ -108,7 +108,7 @@ class UserTenantIsolationTest(APITestCase):
         response = self.client.post(self.users_url, payload)
         # Should fail model validation (400) not 500 constraint failure.
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        # The serializer returns a dict with field errors or non_field_errors
-        resp_json = response.data
+        # The serializer returns a dict with field errors or non_field_errors wrapped in 'details'
+        resp_json = response.data.get("details", {})
         has_email_error = ("email" in resp_json) or ("non_field_errors" in resp_json)
-        self.assertTrue(has_email_error, f"Expected email/non_field_errors in response, got: {resp_json}")
+        self.assertTrue(has_email_error, f"Expected email/non_field_errors in details, got: {response.data}")

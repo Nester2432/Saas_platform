@@ -5,8 +5,8 @@ from django.db import transaction
 from modules.inventario.tests.factories import make_empresa, make_admin, activar_modulo
 from modules.ventas.models import Venta, LineaVenta, EstadoVenta, PagoVenta, MetodoPago, TipoMetodoPago
 from modules.ventas.services import VentaService
-from modules.pagos.services.pagos import PagoService
-from modules.pagos.models import Pago, EstadoPago
+from modules.cobranzas.services.pagos import PagoService
+from modules.cobranzas.models import Pago, EstadoPago
 from modules.facturacion.models import Factura, EstadoFactura
 from modules.inventario.models import Producto, CategoriaProducto
 

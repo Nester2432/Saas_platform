@@ -147,7 +147,7 @@ class ClienteViewSet(TenantQuerysetMixin, AuditLogMixin, viewsets.ModelViewSet):
     def perform_create(self, serializer):
         """
         Override TenantQuerysetMixin.perform_create to route through ClienteService.
-        ClienteService.crear_cliente handles validation + historial.
+        ClienteService.crear_cliente handles validation, plans check, historial and tags.
         """
         datos = dict(serializer.validated_data)
         etiqueta_ids = datos.pop("etiqueta_ids", [])
@@ -156,15 +156,8 @@ class ClienteViewSet(TenantQuerysetMixin, AuditLogMixin, viewsets.ModelViewSet):
             empresa=self.request.empresa,
             datos=datos,
             usuario=self.request.user,
+            etiqueta_ids=etiqueta_ids,
         )
-
-        # Assign tags if provided at creation time
-        if etiqueta_ids:
-            etiquetas = EtiquetaCliente.objects.for_empresa(
-                self.request.empresa
-            ).filter(id__in=etiqueta_ids)
-            for etiqueta in etiquetas:
-                ClienteService.agregar_etiqueta(cliente, etiqueta, self.request.user)
 
         # Attach the created instance so the response serializer can use it
         serializer.instance = cliente

@@ -21,6 +21,7 @@ import uuid
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
+import auto_prefetch
 
 from core.managers.base import SoftDeleteManager, SoftDeleteTenantManager
 
@@ -55,7 +56,7 @@ class BaseModel(models.Model):
         db_index=True,
         help_text="Soft delete timestamp. NULL means record is active."
     )
-    created_by = models.ForeignKey(
+    created_by = auto_prefetch.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,
         blank=True,
@@ -63,7 +64,7 @@ class BaseModel(models.Model):
         related_name="%(app_label)s_%(class)s_created",
         help_text="User who created this record."
     )
-    updated_by = models.ForeignKey(
+    updated_by = auto_prefetch.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,
         blank=True,
@@ -125,7 +126,7 @@ class EmpresaModel(BaseModel):
         Cliente.objects.for_empresa(request.empresa)
     """
 
-    empresa = models.ForeignKey(
+    empresa = auto_prefetch.ForeignKey(
         "empresas.Empresa",
         on_delete=models.CASCADE,
         related_name="%(app_label)s_%(class)s_set",

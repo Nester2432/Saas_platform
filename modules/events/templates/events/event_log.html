@@ -1,0 +1,77 @@
+{% extends "events/base_demo.html" %}
+
+{% block title %}Event Log | GravitySaaS{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 32px;">
+    <div>
+        <h1 style="margin: 0; font-size: 2rem;">Audit Event Store</h1>
+        <p style="color: var(--text-muted); margin: 4px 0 0 0;">Nivel de trazabilidad atómica: Cada cambio en el dominio es persistido y procesado asíncronamente.</p>
+    </div>
+    <div style="display: flex; gap: 12px;">
+        <button class="btn btn-outline" onclick="loadEvents()">🔄 Refresh</button>
+        <button class="btn btn-primary" onclick="showToast('Replay iniciado para eventos fallidos', 'info')">⚡ Replay Failed</button>
+    </div>
+</div>
+
+<div class="card">
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="text-align: left; color: var(--text-muted); font-size: 0.8rem; border-bottom: 1px solid var(--border);">
+                <th style="padding: 12px 16px;">EVENTO</th>
+                <th style="padding: 12px 16px;">ESTADO</th>
+                <th style="padding: 12px 16px;">ID TRANSACCIÓN</th>
+                <th style="padding: 12px 16px;">EMPRESA</th>
+                <th style="padding: 12px 16px;">AUTOR</th>
+                <th style="padding: 12px 16px;">PROCESADO EN</th>
+            </tr>
+        </thead>
+        <tbody id="events-body">
+            <!-- Dynamic content -->
+        </tbody>
+    </table>
+    
+    <div id="loading-indicator" style="padding: 40px; text-align: center; color: var(--text-muted);">
+        Cargando eventos del EventStore...
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    async function loadEvents() {
+        document.getElementById('loading-indicator').style.display = 'block';
+        const res = await fetch('/api/v1/events/event-store/');
+        const data = await res.json();
+        const results = data.results || data;
+        const body = document.getElementById('events-body');
+        
+        body.innerHTML = results.slice(0, 20).map(e => {
+            let statusBadge = 'badge-warning';
+            if (e.status === 'PROCESSED') statusBadge = 'badge-success';
+            if (e.status.includes('FAILED')) statusBadge = 'badge-error';
+
+            return `
+                <tr style="border-bottom: 1px solid var(--border); font-size: 0.85rem;">
+                    <td style="padding: 12px 16px;">
+                        <span style="font-weight: 600; font-family: 'Outfit', sans-serif;">${e.event_name}</span>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">${new Date(e.created_at).toLocaleTimeString()}</div>
+                    </td>
+                    <td style="padding: 12px 16px;"><span class="badge ${statusBadge}">${e.status}</span></td>
+                    <td style="padding: 12px 16px; font-family: monospace; color: var(--text-muted);">${e.event_id.substring(0,12)}...</td>
+                    <td style="padding: 12px 16px; color: var(--text-muted);">${e.empresa_id ? e.empresa_id.substring(0,8) : 'SISTEMA'}</td>
+                    <td style="padding: 12px 16px; font-weight: 500;">Admin User</td>
+                    <td style="padding: 12px 16px; color: var(--success); font-weight: 600;">
+                        ${e.processed_at ? new Date(e.processed_at).toLocaleTimeString() : '-'}
+                    </td>
+                </tr>
+            `;
+        }).join('') || '<tr><td colspan="6" style="padding: 24px; text-align: center; color: var(--text-muted);">No hay eventos registrados</td></tr>';
+        
+        document.getElementById('loading-indicator').style.display = 'none';
+    }
+
+    loadEvents();
+    setInterval(loadEvents, 10000);
+</script>
+{% endblock %}

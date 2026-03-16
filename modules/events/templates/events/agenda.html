@@ -1,0 +1,69 @@
+{% extends "events/base_demo.html" %}
+
+{% block title %}Agenda | GravitySaaS{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 32px;">
+    <div>
+        <h1 style="margin: 0; font-size: 2rem;">Agenda y Turnos</h1>
+        <p style="color: var(--text-muted); margin: 4px 0 0 0;">Gestión de citas, horarios disponibles y ocupación de profesionales.</p>
+    </div>
+    <div style="display: flex; gap: 12px;">
+        <button class="btn btn-outline">📅 Ver Semana</button>
+        <button class="btn btn-primary" onclick="showToast('Nuevo turno requiere configuración de profesional', 'warning')">➕ Agendar Turno</button>
+    </div>
+</div>
+
+<!-- Mock Calendar Interface -->
+<div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; margin-bottom: 32px;">
+    {% for day in "LMMJVSD" %}
+    <div class="card" style="padding: 12px; text-align: center; background: {% if forloop.counter == 3 %}rgba(99, 102, 241, 0.1){% else %}var(--card-bg){% endif %}; border: {% if forloop.counter == 3 %}1px solid var(--primary){% else %}1px solid var(--border){% endif %};">
+        <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">{{ day }}</div>
+        <div style="font-size: 1.25rem; font-weight: 600; margin-top: 4px;">{{ forloop.counter|add:15 }}</div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="card">
+    <h2 style="margin-top: 0; font-size: 1.25rem; margin-bottom: 24px;">Turnos del Día</h2>
+    
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+        <!-- Appointment 1 -->
+        <div style="display: flex; gap: 20px; align-items: center; padding: 16px; background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px solid var(--border);">
+            <div style="width: 80px; font-weight: 700; color: var(--primary-light);">09:00 AM</div>
+            <div style="flex: 1;">
+                <div style="font-weight: 600;">Consulta General</div>
+                <div style="font-size: 0.85rem; color: var(--text-muted);">Paciente: Juan Demo</div>
+            </div>
+            <div><span class="badge badge-success">Confirmado</span></div>
+            <div><button class="btn btn-outline btn-sm">Ver</button></div>
+        </div>
+
+        <!-- Appointment 2 -->
+        <div style="display: flex; gap: 20px; align-items: center; padding: 16px; background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px solid var(--border); border-left: 4px solid var(--warning);">
+            <div style="width: 80px; font-weight: 700; color: var(--primary-light);">10:30 AM</div>
+            <div style="flex: 1;">
+                <div style="font-weight: 600;">Mantenimiento Mensual</div>
+                <div style="font-size: 0.85rem; color: var(--text-muted);">Cliente: TechCorp S.A.</div>
+            </div>
+            <div><span class="badge badge-warning">Pendiente</span></div>
+            <div><button class="btn btn-outline btn-sm">Ver</button></div>
+        </div>
+
+        <!-- Appointment 3 -->
+        <div style="display: flex; gap: 20px; align-items: center; padding: 16px; background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px solid var(--border);">
+            <div style="width: 80px; font-weight: 700; color: var(--primary-light);">02:00 PM</div>
+            <div style="flex: 1;">
+                <div style="font-weight: 600;">Revisión de Cuenta</div>
+                <div style="font-size: 0.85rem; color: var(--text-muted);">Cliente: Maria Soler</div>
+            </div>
+            <div><span class="badge badge-success">Confirmado</span></div>
+            <div><button class="btn btn-outline btn-sm">Ver</button></div>
+        </div>
+    </div>
+
+    <div style="margin-top: 32px; padding: 16px; background: rgba(245, 158, 11, 0.05); border: 1px dashed var(--warning); border-radius: 8px;">
+        <p style="margin: 0; font-size: 0.85rem; color: var(--warning);"><b>Nota:</b> Esta pantalla utiliza datos de demostración (mock) para ilustrar la interfaz de agenda. La integración con el módulo de 'turnos' real está disponible mediante API.</p>
+    </div>
+</div>
+{% endblock %}

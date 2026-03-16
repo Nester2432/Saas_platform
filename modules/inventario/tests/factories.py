@@ -50,13 +50,9 @@ def make_empresa(**kwargs) -> Empresa:
         "nombre":    f"Empresa Test {uid}",
         "slug":      f"empresa-{uid}",
         "email":     f"admin@empresa-{uid}.com",
-        "plan":      Empresa.Plan.PROFESSIONAL,
         "is_active": True,
     }
     defaults.update(kwargs)
-    empresa = Empresa.objects.create(**defaults)
-    EmpresaConfiguracion.objects.get_or_create(empresa=empresa)
-
     plan, _ = Plan.objects.get_or_create(
         nombre="Starter",
         defaults={
@@ -64,6 +60,9 @@ def make_empresa(**kwargs) -> Empresa:
             "activo": True
         }
     )
+    empresa = Empresa.objects.create(**defaults)
+    EmpresaConfiguracion.objects.get_or_create(empresa=empresa)
+
     # Signal creates a TRIAL subscription. Update it to ACTIVE for the factory's default behavior.
     Suscripcion.objects.filter(empresa=empresa, estado__in=[EstadoSuscripcion.ACTIVE, EstadoSuscripcion.TRIAL]).update(
         plan=plan,

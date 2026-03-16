@@ -8,13 +8,13 @@ from modules.billing.models import Plan, Suscripcion
 def plan_pro():
     """Create a default Pro plan for tests."""
     plan, _ = Plan.objects.get_or_create(
-        slug="pro",
+        nombre="Pro Plan",
         defaults={
-            "nombre": "Pro Plan",
             "precio_mensual": Decimal("50.00"),
-            "limite_usuarios": 10,
-            "limite_productos": 100,
-            "limite_ventas_mes": 1000,
+            "precio_anual": Decimal("500.00"),
+            "max_usuarios": 10,
+            "max_clientes": 200,
+            "max_productos": 100,
             "activo": True
         }
     )
@@ -31,7 +31,7 @@ def empresa_fixture(plan_pro):
     # Update the subscription created by make_empresa instead of creating a new one
     Suscripcion.objects.filter(empresa=emp).update(
         plan=plan_pro,
-        estado="ACTIVA",
+        estado="ACTIVE",
         fecha_inicio=timezone.now().date()
     )
     return emp

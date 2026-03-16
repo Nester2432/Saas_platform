@@ -28,7 +28,7 @@ from modules.clientes.models import Cliente, EtiquetaCliente, NotaCliente
 # Core factories
 # ---------------------------------------------------------------------------
 
-from modules.billing.models import Plan, Suscripcion, EstadoSuscripcion
+from modules.billing.models import Plan, Suscripcion, EstadoSuscripcion, EstadoSuscripcion
 from django.utils import timezone
 
 def make_empresa(**kwargs) -> Empresa:
@@ -42,30 +42,25 @@ def make_empresa(**kwargs) -> Empresa:
         "nombre": f"Empresa Test {uid}",
         "slug": f"empresa-test-{uid}",
         "email": f"admin@empresa-{uid}.com",
-        "plan": Empresa.Plan.PROFESSIONAL,
         "is_active": True,
     }
     defaults.update(kwargs)
+    plan, _ = Plan.objects.get_or_create(
+        nombre="Test Plan",
+        defaults={
+
+            "nombre": "Test Plan",
+            "precio_mensual": 0,
+            "activo": True
+        }
+    )
     empresa = Empresa.objects.create(**defaults)
 
     # Every empresa needs a configuracion for TenantMiddleware select_related
     EmpresaConfiguracion.objects.get_or_create(empresa=empresa)
 
     # NEW: Create a default Plan and Suscripcion so SubscriptionGuardMiddleware doesn't block tests
-    plan, _ = Plan.objects.get_or_create(
-        slug="test-plan",
-        defaults={
-            "nombre": "Test Plan",
-            "precio_mensual": 0,
-            "activo": True
-        }
-    )
-    Suscripcion.objects.create(
-        empresa=empresa,
-        plan=plan,
-        estado=EstadoSuscripcion.ACTIVA,
-        fecha_inicio=timezone.now().date()
-    )
+    Suscripcion.objects.filter(empresa=empresa).update(plan=plan, estado="ACTIVE", fecha_inicio=timezone.now().date())
 
     return empresa
 

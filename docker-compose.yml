@@ -10,5 +10,19 @@ services:
     volumes:
       - redis_data:/data
 
+  db:
+    image: postgres:15-alpine
+    container_name: saas_platform_db
+    ports:
+      - "5432:5432"
+    restart: always
+    environment:
+      POSTGRES_USER: saas_user
+      POSTGRES_PASSWORD: saas_password
+      POSTGRES_DB: saas_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
 volumes:
   redis_data:
+  postgres_data:

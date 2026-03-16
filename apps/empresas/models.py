@@ -32,11 +32,7 @@ class Empresa(BaseModel):
     (enforced via EmpresaModulo records and ModuloActivoPermission).
     """
 
-    class Plan(models.TextChoices):
-        FREE = "free", "Free"
-        STARTER = "starter", "Starter"
-        PROFESSIONAL = "professional", "Professional"
-        ENTERPRISE = "enterprise", "Enterprise"
+
 
     nombre = models.CharField(max_length=200)
     slug = models.SlugField(
@@ -46,11 +42,6 @@ class Empresa(BaseModel):
     )
     email = models.EmailField(help_text="Primary contact email.")
     telefono = models.CharField(max_length=30, blank=True)
-    plan = models.CharField(
-        max_length=20,
-        choices=Plan.choices,
-        default=Plan.FREE,
-    )
     is_active = models.BooleanField(
         default=True,
         db_index=True,
@@ -68,7 +59,7 @@ class Empresa(BaseModel):
         ordering = ["nombre"]
         indexes = [
             models.Index(fields=["slug"]),
-            models.Index(fields=["is_active", "plan"]),
+            models.Index(fields=["is_active"]),
         ]
         verbose_name = "Empresa"
         verbose_name_plural = "Empresas"
@@ -79,7 +70,7 @@ class Empresa(BaseModel):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.nombre} ({self.plan})"
+        return self.nombre
 
 
 class EmpresaConfiguracion(BaseModel):

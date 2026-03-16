@@ -221,13 +221,19 @@ class NotaCliente(EmpresaModel):
 
 class HistorialCliente(EmpresaModel):
     """
-    Immutable event log for a Cliente.
+    Immutable event log for a Cliente (CRM Specific).
 
-    Every significant action on a cliente (created, updated, tag added,
+    Every significant CRM action on a cliente (created, updated, tag added,
     note added, etc.) is recorded here automatically via ClienteService.
+    
+    IMPORTANT ARCHITECTURE NOTE:
+    This is NOT a replacement for the global `AuditLog` (modules/auditlog).
+    `AuditLog` tracks low-level HTTP requests and security events across the SaaS.
+    `HistorialCliente` is a pure business-domain feature used to render the
+    "Customer Activity Timeline" widget in the CRM view.
 
     Design decisions:
-    - Never soft-deleted: the audit trail must be permanent
+    - Never soft-deleted: the CRM timeline must be permanent
     - metadata JSONField: each event type can store relevant context
       (e.g. UPDATED stores {"campos_modificados": ["email", "telefono"]})
     - No updated_by/updated_at make sense here — events are write-once

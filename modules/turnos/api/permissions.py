@@ -135,8 +135,8 @@ def _get_profesional_del_usuario(request):
     profesional = (
         Profesional.objects
         .filter(
-            empresa=empresa,
-            usuario=request.user,
+            empresa_id=empresa.id,
+            usuario_id=request.user.id,
             activo=True,
             deleted_at__isnull=True,
         )
@@ -299,6 +299,7 @@ class TurnoObjectPermission(BasePermission):
     message = "No tiene permiso para acceder a este turno."
 
     def has_object_permission(self, request, view, obj) -> bool:
+        print(f"DEBUG: has_object_permission called for user {request.user.id}, obj {obj.id}")
         user = request.user
         empresa = getattr(request, "empresa", None)
 

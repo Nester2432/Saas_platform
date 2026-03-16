@@ -139,7 +139,7 @@ class BillingViewSet(TenantQuerysetMixin, viewsets.ReadOnlyModelViewSet):
                 },
                 "usuarios": {
                     "actual": BillingService.obtener_uso_actual(request.empresa, "usuarios"),
-                    "limite": plan.limite_usuarios if plan else 0
+                    "limite": plan.max_usuarios if plan else 0
                 }
             }
         }

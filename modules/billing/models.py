@@ -27,6 +27,9 @@ class Plan(BaseModel):
     max_clientes = models.PositiveIntegerField(null=True, blank=True)
     max_productos = models.PositiveIntegerField(null=True, blank=True)
     
+    # API Throttling (Requests per minute, None = Unlimited)
+    rate_limit_per_minute = models.PositiveIntegerField(null=True, blank=True, default=60)
+    
     # Stripe Integration
     stripe_price_id = models.CharField(max_length=100, blank=True, null=True)
     

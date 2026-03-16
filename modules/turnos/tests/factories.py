@@ -43,6 +43,7 @@ from modules.turnos.models import (
     Servicio,
     Turno,
 )
+from modules.billing.models import Plan, Suscripcion, EstadoSuscripcion
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -55,12 +56,29 @@ def make_empresa(**kwargs) -> Empresa:
         "nombre": f"Empresa Test {uid}",
         "slug": f"empresa-{uid}",
         "email": f"admin@empresa-{uid}.com",
-        "plan": Empresa.Plan.PROFESSIONAL,
         "is_active": True,
     }
     defaults.update(kwargs)
+    
+    # Pre-create plan so signals find it
+    plan, _ = Plan.objects.get_or_create(
+        nombre="Test Plan",
+        defaults={
+            "precio_mensual": 0,
+            "activo": True
+        }
+    )
+    
     empresa = Empresa.objects.create(**defaults)
     EmpresaConfiguracion.objects.get_or_create(empresa=empresa)
+    
+    # Ensure active subscription
+    Suscripcion.objects.filter(empresa=empresa).update(
+        plan=plan, 
+        estado=EstadoSuscripcion.ACTIVE, 
+        fecha_inicio=timezone.now().date()
+    )
+    
     return empresa
 
 

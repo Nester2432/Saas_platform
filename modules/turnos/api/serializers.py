@@ -68,7 +68,6 @@ class ServicioResumenSerializer(serializers.ModelSerializer):
     """
 
     duracion_display = serializers.CharField(
-        source="duracion_display",
         read_only=True,
         help_text="Human-readable duration: '45 min' or '1h 30min'."
     )

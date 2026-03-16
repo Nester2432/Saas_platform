@@ -20,9 +20,10 @@ Important design note on with_deleted():
 
 from django.db import models
 from django.utils import timezone
+import auto_prefetch
 
 
-class SoftDeleteQuerySet(models.QuerySet):
+class SoftDeleteQuerySet(auto_prefetch.QuerySet):
     """
     QuerySet that supports soft delete operations.
 
@@ -60,7 +61,7 @@ class SoftDeleteQuerySet(models.QuerySet):
         """Return only soft-deleted records."""
         return self.exclude(deleted_at__isnull=True)
 
-class TenantQuerySet(models.QuerySet):
+class TenantQuerySet(auto_prefetch.QuerySet):
     """
     QuerySet that provides tenant (empresa) scoping.
 
