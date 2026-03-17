@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: saas-platform-demo
+    env: python
+    plan: free
+    buildCommand: "./build.sh"
+    startCommand: "./start.sh"
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: ""
+      - key: CORS_ALLOW_ALL_ORIGINS
+        value: "True"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: saas-platform-db
+          property: connectionString
+      - key: SECURE_SSL_REDIRECT
+        value: "False"
+
+databases:
+  - name: saas-platform-db
+    plan: free
