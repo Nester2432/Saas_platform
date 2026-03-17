@@ -8,6 +8,7 @@ API versioning via URL prefix: /api/v1/
 
 from django.contrib import admin
 from django.urls import path, include
+from django.views.generic import RedirectView
 from rest_framework_simplejwt.views import TokenRefreshView, TokenObtainPairView
 
 from apps.usuarios.auth.serializers import CustomTokenObtainPairSerializer
@@ -18,6 +19,8 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
 
 urlpatterns = [
+    # Redirect root to the demo dashboard
+    path("", RedirectView.as_view(url="/events/demo/dashboard/", permanent=False)),
     # Django admin
     path("admin/", admin.site.urls),
 
