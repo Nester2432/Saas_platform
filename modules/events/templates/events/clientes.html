@@ -604,7 +604,7 @@
              draggable="true"
              ondragstart="onDragStart(event,'${lead.id}')"
              ondragend="onDragEnd(event)"
-             onclick="if(event.target.tagName !== 'BUTTON') window.location='/demo/contactos/${lead.id}/'">
+             onclick="if(event.target.tagName !== 'BUTTON') window.location='/api/v1/events/demo/contactos/${lead.id}/'">
             <div class="lead-card-header">
                 <div class="lead-avatar avatar-${stageId}">${initial}</div>
                 <div style="min-width:0">
