@@ -30,6 +30,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.authentication import SessionAuthentication
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 
 class CsrfExemptSessionAuthentication(SessionAuthentication):
     def enforce_csrf(self, request):
@@ -70,6 +72,7 @@ def _get_event_status(event_name: str, empresa_id: str, after_event_id: str = No
     return None
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class DemoFullFlowView(APIView):
     """
     POST /api/v1/events/demo/full-flow/
@@ -216,6 +219,7 @@ class DemoFullFlowView(APIView):
         }, status=status.HTTP_201_CREATED)
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class DemoResourcesView(APIView):
     """
     GET /api/v1/events/demo/resources/
@@ -245,8 +249,6 @@ class DemoResourcesView(APIView):
         ventas = Venta.objects.filter(empresa=empresa).order_by("-created_at")[:10]
         facturas = Factura.objects.filter(empresa=empresa).order_by("-created_at")[:10]
 
-        return Response({
-            "empresa_id": str(empresa.id),
         # Protected serialization to avoid 500 on data inconsistencies
         def safe_serialize_cliente(c):
             try:
@@ -295,7 +297,6 @@ class DemoResourcesView(APIView):
                 "ventas": [item for item in (safe_serialize_venta(v) for v in ventas) if item],
                 "facturas": [item for item in (safe_serialize_factura(f) for f in facturas) if item],
             }
-        })
         })
 
 
@@ -355,6 +356,7 @@ class DemoStatusView(APIView):
         })
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class DemoActionView(APIView):
     """
     POST /api/v1/events/demo/action/
