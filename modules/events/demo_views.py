@@ -400,6 +400,7 @@ class DemoActionView(APIView):
                     empresa=empresa,
                     datos={"nombre": nombre, "email": email},
                     usuario=user,
+                )
                 return Response({
                     "message": "Cliente creado con éxito",
                     "id": str(cliente.id),
