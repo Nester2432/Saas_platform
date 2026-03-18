@@ -503,6 +503,7 @@
         if (force) showToast('Sincronizando con base de datos...', 'success');
 
         try {
+            console.log('Syncing from: /api/v1/events/demo/resources/');
             const res = await fetch('/api/v1/events/demo/resources/', {
                 headers: {
                     'X-CSRFToken': getCookie('csrftoken'),
@@ -511,28 +512,34 @@
             });
             const data = await res.json();
             const clientes = data?.recent_resources?.clientes || [];
+            console.log('Received clientes:', clientes.length);
             
-            const currentLeads = force ? [] : getLeads();
-            const existingIds = new Set(currentLeads.map(l => l.id));
+            if (clientes.length > 0) {
+                let currentLeads = force ? [] : getLeads();
+                const existingIds = new Set(currentLeads.map(l => l.id));
 
-            const newLeadsFromApi = clientes
-                .filter(c => !existingIds.has(c.id))
-                .map((c, i) => ({
-                    id: c.id,
-                    nombre: c.nombre,
-                    email: c.email || '',
-                    telefono: c.telefono || '',
-                    notas: '',
-                    stage: STAGES[i % (STAGES.length - 2)].id, // avoid closed/lost by default
-                    created: c.created_at,
-                }));
-            
-            const updatedLeads = [...currentLeads, ...newLeadsFromApi];
-            saveLeads(updatedLeads);
-            render();
-            if (force) showToast(`Sincronizados ${newLeadsFromApi.length} nuevos contactos`, 'success');
-        } catch (e) { 
-            if (force) showToast('Error al sincronizar', 'error');
+                const newLeadsFromApi = clientes
+                    .filter(c => !existingIds.has(c.id))
+                    .map((c, i) => ({
+                        id: c.id,
+                        nombre: c.nombre,
+                        email: c.email || '',
+                        telefono: c.telefono || '',
+                        notas: '',
+                        stage: STAGES[i % (STAGES.length - 2)].id, // avoid closed/lost by default
+                        created: c.created_at,
+                    }));
+                
+                const updatedLeads = [...currentLeads, ...newLeadsFromApi];
+                saveLeads(updatedLeads);
+                render();
+                if (force) showToast(`Sincronizados ${newLeadsFromApi.length} nuevos contactos`, 'success');
+            } else {
+                if (force) showToast('No se encontraron nuevos contactos para sincronizar', 'info');
+            }
+        } catch (err) {
+            console.error('Sync error:', err);
+            if (force) showToast('Error al sincronizar con la base de datos', 'error');
         }
     }
 
@@ -693,6 +700,7 @@
 
             // Fire API event (best-effort)
             try {
+                console.log('Saving lead to: /api/v1/events/demo/action/');
                 const apiRes = await fetch('/api/v1/events/demo/action/', {
                     method: 'POST',
                     headers: { 
@@ -701,6 +709,7 @@
                     },
                     body: JSON.stringify({ action: 'crear_cliente', data: { nombre, email } })
                 });
+                console.log('API Response status:', apiRes.status);
                 if (apiRes.ok) {
                     const apiData = await apiRes.json();
                     // Update local ID with real DB ID if successful
