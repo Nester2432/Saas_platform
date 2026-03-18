@@ -401,11 +401,23 @@ class DemoActionView(APIView):
                     datos={"nombre": nombre, "email": email},
                     usuario=user,
                 )
+                })
+
+            elif action == "editar_cliente":
+                cliente_id = data.get("id")
+                if not cliente_id:
+                    return Response({"error": "ID de cliente no proporcionado"}, status=status.HTTP_400_BAD_REQUEST)
+                
+                cliente = Cliente.objects.get(id=cliente_id, empresa=empresa)
+                cliente.nombre = data.get("nombre", cliente.nombre)
+                cliente.email = data.get("email", cliente.email)
+                cliente.telefono = data.get("telefono", cliente.telefono)
+                cliente.save()
+                
                 return Response({
-                    "message": "Cliente creado con éxito",
+                    "message": "Cliente actualizado con éxito",
                     "id": str(cliente.id),
-                    "nombre": nombre,
-                    **(_get_event_status(events.CLIENTE_CREADO, empresa.id) or {})
+                    "nombre": cliente.nombre
                 })
 
             elif action == "crear_venta":
