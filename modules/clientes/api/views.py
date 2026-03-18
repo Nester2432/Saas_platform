@@ -344,8 +344,8 @@ class ContactoViewSet(viewsets.ReadOnlyModelViewSet):
     - GET /contactos/     -> List with total_ventas, total_turnos and search.
     - GET /contactos/{id} -> Single API response with full 360 detail (ventas, turnos, etc).
     """
-    permission_classes = [ContactoPermission, ModuloActivoPermission]
-    modulo_requerido = "clientes"
+    permission_classes = [ContactoPermission]
+    modulo_requerido = "clientes"  # Keep for reference but not enforced via ModuloActivoPermission
     pagination_class = DefaultPagination
 
     def _get_tenant(self):
