@@ -247,34 +247,55 @@ class DemoResourcesView(APIView):
 
         return Response({
             "empresa_id": str(empresa.id),
+        # Protected serialization to avoid 500 on data inconsistencies
+        def safe_serialize_cliente(c):
+            try:
+                # Prioritize the property but fallback to manual concat if it fails
+                nombre_display = getattr(c, "nombre_completo", f"{c.nombre} {c.apellido}")
+                return {
+                    "id": str(c.id), 
+                    "nombre": nombre_display, 
+                    "email": c.email,
+                    "telefono": c.telefono,
+                    "created_at": c.created_at
+                }
+            except Exception as e:
+                logger.warning(f"Demo: failed to serialize cliente {c.id}: {e}")
+                return None
+
+        def safe_serialize_venta(v):
+            try:
+                return {
+                    "id": str(v.id), 
+                    "numero": getattr(v, "numero", "N/A"), 
+                    "total": float(v.total), 
+                    "estado": v.estado, 
+                    "created_at": v.created_at
+                }
+            except Exception as e:
+                logger.warning(f"Demo: failed to serialize venta {v.id}: {e}")
+                return None
+
+        def safe_serialize_factura(f):
+            try:
+                return {
+                    "id": str(f.id), 
+                    "numero": getattr(f, "numero", "N/A"), 
+                    "total": float(f.total), 
+                    "created_at": f.created_at
+                }
+            except Exception as e:
+                logger.warning(f"Demo: failed to serialize factura {f.id}: {e}")
+                return None
+
+        return Response({
+            "empresa_id": str(empresa.id),
             "recent_resources": {
-                "clientes": [
-                    {
-                        "id": str(c.id), 
-                        "nombre": getattr(c, "nombre_completo", f"{c.nombre} {c.apellido}"), 
-                        "email": c.email,
-                        "telefono": c.telefono,
-                        "created_at": c.created_at
-                    } for c in clientes
-                ],
-                "ventas": [
-                    {
-                        "id": str(v.id), 
-                        "numero": v.numero, 
-                        "total": float(v.total), 
-                        "estado": v.estado, 
-                        "created_at": v.created_at
-                    } for v in ventas
-                ],
-                "facturas": [
-                    {
-                        "id": str(f.id), 
-                        "numero": f.numero, 
-                        "total": float(f.total), 
-                        "created_at": f.created_at
-                    } for f in facturas
-                ],
+                "clientes": [item for item in (safe_serialize_cliente(c) for c in clientes) if item],
+                "ventas": [item for item in (safe_serialize_venta(v) for v in ventas) if item],
+                "facturas": [item for item in (safe_serialize_factura(f) for f in facturas) if item],
             }
+        })
         })
 
 
