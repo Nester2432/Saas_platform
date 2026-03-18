@@ -33,9 +33,9 @@ def get_contactos_queryset(tenant, search=None, ordering=None):
     qs = qs.annotate(
         total_ventas=Count('ventas', filter=~Q(ventas__estado='CANCELADA')),
         total_turnos=Count('turnos', filter=~Q(turnos__estado='CANCELADO')),
-        _last_v=Subquery(last_venta),
-        _last_t=Subquery(last_turno),
-        _last_h=Subquery(last_hist),
+        _last_v=Coalesce(Subquery(last_venta), 'created_at'),
+        _last_t=Coalesce(Subquery(last_turno), 'created_at'),
+        _last_h=Coalesce(Subquery(last_hist), 'created_at'),
     )
     
     # Compute the max date among all activity
