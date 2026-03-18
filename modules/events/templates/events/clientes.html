@@ -12,28 +12,52 @@
         flex-wrap: wrap;
         gap: 16px;
     }
-    .page-header h1 { margin: 0; font-size: 2rem; }
-    .page-header p  { color: var(--text-muted); margin: 4px 0 0; }
+
+    .page-header h1 {
+        margin: 0;
+        font-size: 2rem;
+    }
+
+    .page-header p {
+        color: var(--text-muted);
+        margin: 4px 0 0;
+    }
 
     /* ── Kanban Board ─────────────────────────────── */
     .kanban-board {
-        display: flex;
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: calc((100vw - 64px) / 5);
         gap: 16px;
         overflow-x: auto;
+        overflow-y: hidden;
         padding-bottom: 20px;
-        align-items: flex-start;
+        align-items: start;
+        scroll-snap-type: x proximity;
     }
-    .kanban-board::-webkit-scrollbar { height: 6px; }
-    .kanban-board::-webkit-scrollbar-track { background: transparent; }
-    .kanban-board::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    .kanban-board::-webkit-scrollbar {
+        height: 6px;
+    }
+
+    .kanban-board::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .kanban-board::-webkit-scrollbar-thumb {
+        background: var(--border);
+        border-radius: 3px;
+    }
 
     /* ── Column ───────────────────────────────────── */
     .kanban-col {
-        flex: 0 0 280px;
+        min-width: 0;
         display: flex;
         flex-direction: column;
         gap: 10px;
+        scroll-snap-align: start;
     }
+
     .col-header {
         display: flex;
         align-items: center;
@@ -42,6 +66,7 @@
         border-radius: 10px 10px 0 0;
         border-bottom: 2px solid;
     }
+
     .col-title {
         display: flex;
         align-items: center;
@@ -51,15 +76,17 @@
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
+
     .col-count {
-        background: rgba(255,255,255,0.1);
+        background: rgba(255, 255, 255, 0.1);
         border-radius: 9999px;
         padding: 2px 8px;
         font-size: 0.75rem;
         font-weight: 600;
     }
+
     .col-body {
-        background: rgba(255,255,255,0.02);
+        background: rgba(255, 255, 255, 0.02);
         border: 1px solid var(--border);
         border-radius: 0 0 10px 10px;
         min-height: 200px;
@@ -69,10 +96,12 @@
         gap: 8px;
         transition: background 0.2s;
     }
+
     .col-body.drag-over {
         background: rgba(99, 102, 241, 0.05);
         border-color: var(--primary);
     }
+
     .col-add-btn {
         background: none;
         border: 1px dashed var(--border);
@@ -85,7 +114,11 @@
         transition: all 0.2s;
         margin-top: 4px;
     }
-    .col-add-btn:hover { border-color: var(--primary); color: var(--primary-light); }
+
+    .col-add-btn:hover {
+        border-color: var(--primary);
+        color: var(--primary-light);
+    }
 
     /* ── Lead Card ────────────────────────────────── */
     .lead-card {
@@ -97,21 +130,25 @@
         transition: transform 0.15s, box-shadow 0.15s;
         position: relative;
     }
+
     .lead-card:hover {
         transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
         border-color: var(--primary);
     }
+
     .lead-card.dragging {
         opacity: 0.4;
         cursor: grabbing;
     }
+
     .lead-card-header {
         display: flex;
         align-items: center;
         gap: 10px;
         margin-bottom: 10px;
     }
+
     .lead-avatar {
         width: 34px;
         height: 34px;
@@ -123,11 +160,37 @@
         font-size: 0.9rem;
         flex-shrink: 0;
     }
-    .lead-name  { font-weight: 600; font-size: 0.9rem; }
-    .lead-email { font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px; }
-    .lead-meta  { display: flex; align-items: center; justify-content: space-between; }
-    .lead-date  { font-size: 0.72rem; color: var(--text-muted); }
-    .lead-actions { display: flex; gap: 4px; }
+
+    .lead-name {
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .lead-email {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 170px;
+    }
+
+    .lead-meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .lead-date {
+        font-size: 0.72rem;
+        color: var(--text-muted);
+    }
+
+    .lead-actions {
+        display: flex;
+        gap: 4px;
+    }
+
     .lead-btn {
         background: none;
         border: none;
@@ -138,35 +201,92 @@
         transition: background 0.15s;
         color: var(--text-muted);
     }
-    .lead-btn:hover { background: rgba(255,255,255,0.1); color: var(--text); }
+
+    .lead-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text);
+    }
 
     /* ── Stage color themes ───────────────────────── */
-    .col-nuevo     .col-header { color: #94a3b8; border-color: #94a3b8; background: rgba(148,163,184,0.06); }
-    .col-contactado .col-header { color: #60a5fa; border-color: #3b82f6; background: rgba(59,130,246,0.06); }
-    .col-calificado .col-header { color: #a78bfa; border-color: #7c3aed; background: rgba(124,58,237,0.06); }
-    .col-propuesta  .col-header { color: #fbbf24; border-color: #f59e0b; background: rgba(245,158,11,0.06); }
-    .col-cerrado    .col-header { color: #34d399; border-color: #10b981; background: rgba(16,185,129,0.06); }
-    .col-perdido    .col-header { color: #f87171; border-color: #ef4444; background: rgba(239,68,68,0.06); }
+    .col-nuevo .col-header {
+        color: #94a3b8;
+        border-color: #94a3b8;
+        background: rgba(148, 163, 184, 0.06);
+    }
+
+    .col-contactado .col-header {
+        color: #60a5fa;
+        border-color: #3b82f6;
+        background: rgba(59, 130, 246, 0.06);
+    }
+
+    .col-calificado .col-header {
+        color: #a78bfa;
+        border-color: #7c3aed;
+        background: rgba(124, 58, 237, 0.06);
+    }
+
+    .col-propuesta .col-header {
+        color: #fbbf24;
+        border-color: #f59e0b;
+        background: rgba(245, 158, 11, 0.06);
+    }
+
+    .col-cerrado .col-header {
+        color: #34d399;
+        border-color: #10b981;
+        background: rgba(16, 185, 129, 0.06);
+    }
+
+    .col-perdido .col-header {
+        color: #f87171;
+        border-color: #ef4444;
+        background: rgba(239, 68, 68, 0.06);
+    }
 
     /* Avatar colors per stage */
-    .avatar-nuevo      { background: rgba(148,163,184,0.15); color: #94a3b8; }
-    .avatar-contactado { background: rgba(59,130,246,0.15);  color: #60a5fa; }
-    .avatar-calificado { background: rgba(124,58,237,0.15);  color: #a78bfa; }
-    .avatar-propuesta  { background: rgba(245,158,11,0.15);  color: #fbbf24; }
-    .avatar-cerrado    { background: rgba(16,185,129,0.15);  color: #34d399; }
-    .avatar-perdido    { background: rgba(239,68,68,0.15);   color: #f87171; }
+    .avatar-nuevo {
+        background: rgba(148, 163, 184, 0.15);
+        color: #94a3b8;
+    }
+
+    .avatar-contactado {
+        background: rgba(59, 130, 246, 0.15);
+        color: #60a5fa;
+    }
+
+    .avatar-calificado {
+        background: rgba(124, 58, 237, 0.15);
+        color: #a78bfa;
+    }
+
+    .avatar-propuesta {
+        background: rgba(245, 158, 11, 0.15);
+        color: #fbbf24;
+    }
+
+    .avatar-cerrado {
+        background: rgba(16, 185, 129, 0.15);
+        color: #34d399;
+    }
+
+    .avatar-perdido {
+        background: rgba(239, 68, 68, 0.15);
+        color: #f87171;
+    }
 
     /* ── Modal ────────────────────────────────────── */
     .modal-overlay {
         display: none;
         position: fixed;
         inset: 0;
-        background: rgba(0,0,0,0.7);
+        background: rgba(0, 0, 0, 0.7);
         z-index: 1000;
         justify-content: center;
         align-items: center;
         padding: 16px;
     }
+
     .modal {
         background: var(--card-bg);
         border: 1px solid var(--border);
@@ -175,25 +295,61 @@
         width: 100%;
         max-width: 460px;
         position: relative;
-        animation: modalIn 0.2s cubic-bezier(0.34,1.56,0.64,1);
+        animation: modalIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
+
     @keyframes modalIn {
-        from { transform: scale(0.9); opacity: 0; }
-        to   { transform: scale(1);   opacity: 1; }
+        from {
+            transform: scale(0.9);
+            opacity: 0;
+        }
+
+        to {
+            transform: scale(1);
+            opacity: 1;
+        }
     }
-    .modal h2 { margin: 0 0 20px; font-size: 1.3rem; }
+
+    .modal h2 {
+        margin: 0 0 20px;
+        font-size: 1.3rem;
+    }
+
     .modal-close {
-        position: absolute; top: 16px; right: 16px;
-        background: none; border: none; color: var(--text-muted);
-        cursor: pointer; font-size: 1.2rem; padding: 4px;
-        border-radius: 6px; transition: background 0.15s;
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        font-size: 1.2rem;
+        padding: 4px;
+        border-radius: 6px;
+        transition: background 0.15s;
     }
-    .modal-close:hover { background: rgba(255,255,255,0.1); color: var(--text); }
-    .form-group { margin-bottom: 16px; }
-    .form-group label { display: block; font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px; }
+
+    .modal-close:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--text);
+    }
+
+    .form-group {
+        margin-bottom: 16px;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        margin-bottom: 6px;
+        letter-spacing: 0.5px;
+    }
+
     .form-input {
         width: 100%;
-        background: rgba(255,255,255,0.04);
+        background: rgba(255, 255, 255, 0.04);
         border: 1px solid var(--border);
         border-radius: 8px;
         padding: 10px 14px;
@@ -204,18 +360,41 @@
         transition: border 0.2s;
         box-sizing: border-box;
     }
-    .form-input:focus { border-color: var(--primary); }
-    .form-input option { background: #1e293b; }
-    .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+    .form-input:focus {
+        border-color: var(--primary);
+    }
+
+    .form-input option {
+        background: #1e293b;
+    }
+
+    .modal-footer {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 20px;
+    }
 
     /* ── Responsive ───────────────────────────────── */
     @media (max-width: 768px) {
-        .page-header h1 { font-size: 1.5rem; }
-        .kanban-board { padding-bottom: 16px; }
-        .kanban-col   { flex: 0 0 240px; }
+        .page-header h1 {
+            font-size: 1.5rem;
+        }
+
+        .kanban-board {
+            padding-bottom: 16px;
+        }
+
+        .kanban-col {
+            flex: 0 0 240px;
+        }
     }
+
     @media (max-width: 480px) {
-        .kanban-col { flex: 0 0 210px; }
+        .kanban-col {
+            flex: 0 0 210px;
+        }
     }
 </style>
 {% endblock %}
@@ -223,7 +402,7 @@
 {% block content %}
 <div class="page-header">
     <div>
-        <h1>🎯 Pipeline de Leads</h1>
+        <h1>Contactos</h1>
         <p id="summary-text">Arrastrá los leads entre columnas para avanzar en el embudo.</p>
     </div>
     <button class="btn btn-primary" onclick="openCreateModal()">➕ Nuevo Lead</button>
@@ -280,64 +459,64 @@
 
 {% block extra_js %}
 <script>
-// ── Stage Config ──────────────────────────────────────────────────────────────
-const STAGES = [
-    { id: 'nuevo',      label: 'Nuevo',     icon: '🌱', cls: 'col-nuevo'      },
-    { id: 'contactado', label: 'Contactado',icon: '📞', cls: 'col-contactado'  },
-    { id: 'calificado', label: 'Calificado',icon: '⭐', cls: 'col-calificado'  },
-    { id: 'propuesta',  label: 'Propuesta', icon: '📋', cls: 'col-propuesta'   },
-    { id: 'cerrado',    label: 'Ganado',    icon: '✅', cls: 'col-cerrado'     },
-    { id: 'perdido',    label: 'Perdido',   icon: '❌', cls: 'col-perdido'     },
-];
+    // ── Stage Config ──────────────────────────────────────────────────────────────
+    const STAGES = [
+        { id: 'nuevo', label: 'Nuevo', icon: '🌱', cls: 'col-nuevo' },
+        { id: 'contactado', label: 'Contactado', icon: '📞', cls: 'col-contactado' },
+        { id: 'calificado', label: 'Calificado', icon: '⭐', cls: 'col-calificado' },
+        { id: 'propuesta', label: 'Propuesta', icon: '📋', cls: 'col-propuesta' },
+        { id: 'cerrado', label: 'Ganado', icon: '✅', cls: 'col-cerrado' },
+        { id: 'perdido', label: 'Perdido', icon: '❌', cls: 'col-perdido' },
+    ];
 
-// ── State ─────────────────────────────────────────────────────────────────────
-// Stored in localStorage so it persists between page reloads
-const STORAGE_KEY = 'saas_demo_leads';
+    // ── State ─────────────────────────────────────────────────────────────────────
+    // Stored in localStorage so it persists between page reloads
+    const STORAGE_KEY = 'saas_demo_leads';
 
-function getLeads() {
-    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
-    catch { return []; }
-}
+    function getLeads() {
+        try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+        catch { return []; }
+    }
 
-function saveLeads(leads) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(leads));
-}
+    function saveLeads(leads) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(leads));
+    }
 
-// ── Seed from API on first load ───────────────────────────────────────────────
-async function seedFromApi() {
-    if (getLeads().length > 0) return; // already seeded
-    try {
-        const res  = await fetch('/api/v1/events/demo/resources/');
-        const data = await res.json();
-        const clientes = data?.recent_resources?.clientes || [];
-        const leads = clientes.map((c, i) => ({
-            id:       c.id,
-            nombre:   c.nombre,
-            email:    c.email || '',
-            telefono: c.telefono || '',
-            notas:    '',
-            stage:    STAGES[i % (STAGES.length - 1)].id,
-            created:  c.created_at,
-        }));
-        saveLeads(leads);
-    } catch(e) { /* API not available, start empty */ }
-}
+    // ── Seed from API on first load ───────────────────────────────────────────────
+    async function seedFromApi() {
+        if (getLeads().length > 0) return; // already seeded
+        try {
+            const res = await fetch('/api/v1/events/demo/resources/');
+            const data = await res.json();
+            const clientes = data?.recent_resources?.clientes || [];
+            const leads = clientes.map((c, i) => ({
+                id: c.id,
+                nombre: c.nombre,
+                email: c.email || '',
+                telefono: c.telefono || '',
+                notas: '',
+                stage: STAGES[i % (STAGES.length - 1)].id,
+                created: c.created_at,
+            }));
+            saveLeads(leads);
+        } catch (e) { /* API not available, start empty */ }
+    }
 
-// ── Drag & Drop state ─────────────────────────────────────────────────────────
-let draggedId = null;
+    // ── Drag & Drop state ─────────────────────────────────────────────────────────
+    let draggedId = null;
 
-// ── Render ────────────────────────────────────────────────────────────────────
-function render() {
-    const leads = getLeads();
-    const board = document.getElementById('kanban-board');
-    board.innerHTML = '';
+    // ── Render ────────────────────────────────────────────────────────────────────
+    function render() {
+        const leads = getLeads();
+        const board = document.getElementById('kanban-board');
+        board.innerHTML = '';
 
-    STAGES.forEach(stage => {
-        const stageLeads = leads.filter(l => l.stage === stage.id);
+        STAGES.forEach(stage => {
+            const stageLeads = leads.filter(l => l.stage === stage.id);
 
-        const col = document.createElement('div');
-        col.className = `kanban-col ${stage.cls}`;
-        col.innerHTML = `
+            const col = document.createElement('div');
+            col.className = `kanban-col ${stage.cls}`;
+            col.innerHTML = `
             <div class="col-header">
                 <div class="col-title">${stage.icon} ${stage.label}</div>
                 <span class="col-count">${stageLeads.length}</span>
@@ -352,20 +531,20 @@ function render() {
                     : stageLeads.map(lead => renderCard(lead, stage.id)).join('')}
                 <button class="col-add-btn" onclick="openCreateModal('${stage.id}')">＋ Agregar lead</button>
             </div>`;
-        board.appendChild(col);
-    });
+            board.appendChild(col);
+        });
 
-    // Update summary
-    const total = leads.length;
-    const ganados = leads.filter(l => l.stage === 'cerrado').length;
-    document.getElementById('summary-text').textContent =
-        `${total} leads en pipeline · ${ganados} ganados · Arrastrá para mover entre etapas.`;
-}
+        // Update summary
+        const total = leads.length;
+        const ganados = leads.filter(l => l.stage === 'cerrado').length;
+        document.getElementById('summary-text').textContent =
+            `${total} leads en pipeline · ${ganados} ganados · Arrastrá para mover entre etapas.`;
+    }
 
-function renderCard(lead, stageId) {
-    const initial = (lead.nombre || '?').charAt(0).toUpperCase();
-    const date    = new Date(lead.created).toLocaleDateString('es-AR', { day:'2-digit', month:'short' });
-    return `
+    function renderCard(lead, stageId) {
+        const initial = (lead.nombre || '?').charAt(0).toUpperCase();
+        const date = new Date(lead.created).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' });
+        return `
         <div class="lead-card"
              id="card-${lead.id}"
              draggable="true"
@@ -387,135 +566,135 @@ function renderCard(lead, stageId) {
                 </div>
             </div>
         </div>`;
-}
+    }
 
-// ── Drag & Drop ────────────────────────────────────────────────────────────────
-function onDragStart(e, id) {
-    draggedId = id;
-    setTimeout(() => document.getElementById(`card-${id}`)?.classList.add('dragging'), 0);
-}
-function onDragEnd(e) {
-    document.querySelectorAll('.lead-card').forEach(c => c.classList.remove('dragging'));
-}
-function onDragOver(e, stageId) {
-    e.preventDefault();
-    document.getElementById(`col-${stageId}`)?.classList.add('drag-over');
-}
-function onDragLeave(e) {
-    e.currentTarget.classList.remove('drag-over');
-}
-function onDrop(e, stageId) {
-    e.preventDefault();
-    e.currentTarget.classList.remove('drag-over');
-    if (!draggedId) return;
-    const leads = getLeads();
-    const lead  = leads.find(l => l.id === draggedId);
-    if (lead && lead.stage !== stageId) {
-        lead.stage = stageId;
+    // ── Drag & Drop ────────────────────────────────────────────────────────────────
+    function onDragStart(e, id) {
+        draggedId = id;
+        setTimeout(() => document.getElementById(`card-${id}`)?.classList.add('dragging'), 0);
+    }
+    function onDragEnd(e) {
+        document.querySelectorAll('.lead-card').forEach(c => c.classList.remove('dragging'));
+    }
+    function onDragOver(e, stageId) {
+        e.preventDefault();
+        document.getElementById(`col-${stageId}`)?.classList.add('drag-over');
+    }
+    function onDragLeave(e) {
+        e.currentTarget.classList.remove('drag-over');
+    }
+    function onDrop(e, stageId) {
+        e.preventDefault();
+        e.currentTarget.classList.remove('drag-over');
+        if (!draggedId) return;
+        const leads = getLeads();
+        const lead = leads.find(l => l.id === draggedId);
+        if (lead && lead.stage !== stageId) {
+            lead.stage = stageId;
+            saveLeads(leads);
+            render();
+            showToast(`Lead movido a "${STAGES.find(s => s.id === stageId)?.label}"`, 'success');
+        }
+        draggedId = null;
+    }
+
+    // ── Modal ─────────────────────────────────────────────────────────────────────
+    function openCreateModal(defaultStage = 'nuevo') {
+        document.getElementById('modal-title').textContent = '➕ Nuevo Lead';
+        document.getElementById('edit-lead-id').value = '';
+        document.getElementById('lead-nombre').value = '';
+        document.getElementById('lead-email').value = '';
+        document.getElementById('lead-telefono').value = '';
+        document.getElementById('lead-notas').value = '';
+        document.getElementById('lead-stage').value = defaultStage;
+        document.getElementById('modal-overlay').style.display = 'flex';
+        document.getElementById('lead-nombre').focus();
+    }
+    function openEditModal(id) {
+        const lead = getLeads().find(l => l.id === id);
+        if (!lead) return;
+        document.getElementById('modal-title').textContent = '✏️ Editar Lead';
+        document.getElementById('edit-lead-id').value = lead.id;
+        document.getElementById('lead-nombre').value = lead.nombre;
+        document.getElementById('lead-email').value = lead.email;
+        document.getElementById('lead-telefono').value = lead.telefono;
+        document.getElementById('lead-notas').value = lead.notas || '';
+        document.getElementById('lead-stage').value = lead.stage;
+        document.getElementById('modal-overlay').style.display = 'flex';
+    }
+    function closeModal() {
+        document.getElementById('modal-overlay').style.display = 'none';
+    }
+
+    // ── CRUD ──────────────────────────────────────────────────────────────────────
+    async function saveLead() {
+        const nombre = document.getElementById('lead-nombre').value.trim();
+        const email = document.getElementById('lead-email').value.trim();
+        const telefono = document.getElementById('lead-telefono').value.trim();
+        const notas = document.getElementById('lead-notas').value.trim();
+        const stage = document.getElementById('lead-stage').value;
+        const editId = document.getElementById('edit-lead-id').value;
+
+        if (!nombre) { showToast('El nombre es obligatorio', 'error'); return; }
+
+        const leads = getLeads();
+
+        if (editId) {
+            // Edit existing
+            const lead = leads.find(l => l.id === editId);
+            if (lead) { Object.assign(lead, { nombre, email, telefono, notas, stage }); }
+            saveLeads(leads);
+            showToast('Lead actualizado', 'success');
+        } else {
+            // Create new — also call the API to fire domain events
+            const newLead = {
+                id: crypto.randomUUID(),
+                nombre, email, telefono, notas, stage,
+                created: new Date().toISOString(),
+            };
+            leads.push(newLead);
+            saveLeads(leads);
+
+            // Fire API event (best-effort)
+            try {
+                await fetch('/api/v1/events/demo/action/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'crear_cliente', data: { nombre, email } })
+                });
+            } catch (e) { /* non-critical */ }
+
+            showToast('Lead creado y evento emitido al bus', 'success');
+        }
+
+        closeModal();
+        render();
+    }
+
+    function deleteLead(id) {
+        if (!confirm('¿Eliminar este lead?')) return;
+        const leads = getLeads().filter(l => l.id !== id);
         saveLeads(leads);
         render();
-        showToast(`Lead movido a "${STAGES.find(s=>s.id===stageId)?.label}"`, 'success');
-    }
-    draggedId = null;
-}
-
-// ── Modal ─────────────────────────────────────────────────────────────────────
-function openCreateModal(defaultStage = 'nuevo') {
-    document.getElementById('modal-title').textContent  = '➕ Nuevo Lead';
-    document.getElementById('edit-lead-id').value       = '';
-    document.getElementById('lead-nombre').value        = '';
-    document.getElementById('lead-email').value         = '';
-    document.getElementById('lead-telefono').value      = '';
-    document.getElementById('lead-notas').value         = '';
-    document.getElementById('lead-stage').value         = defaultStage;
-    document.getElementById('modal-overlay').style.display = 'flex';
-    document.getElementById('lead-nombre').focus();
-}
-function openEditModal(id) {
-    const lead = getLeads().find(l => l.id === id);
-    if (!lead) return;
-    document.getElementById('modal-title').textContent  = '✏️ Editar Lead';
-    document.getElementById('edit-lead-id').value       = lead.id;
-    document.getElementById('lead-nombre').value        = lead.nombre;
-    document.getElementById('lead-email').value         = lead.email;
-    document.getElementById('lead-telefono').value      = lead.telefono;
-    document.getElementById('lead-notas').value         = lead.notas || '';
-    document.getElementById('lead-stage').value         = lead.stage;
-    document.getElementById('modal-overlay').style.display = 'flex';
-}
-function closeModal() {
-    document.getElementById('modal-overlay').style.display = 'none';
-}
-
-// ── CRUD ──────────────────────────────────────────────────────────────────────
-async function saveLead() {
-    const nombre   = document.getElementById('lead-nombre').value.trim();
-    const email    = document.getElementById('lead-email').value.trim();
-    const telefono = document.getElementById('lead-telefono').value.trim();
-    const notas    = document.getElementById('lead-notas').value.trim();
-    const stage    = document.getElementById('lead-stage').value;
-    const editId   = document.getElementById('edit-lead-id').value;
-
-    if (!nombre) { showToast('El nombre es obligatorio', 'error'); return; }
-
-    const leads = getLeads();
-
-    if (editId) {
-        // Edit existing
-        const lead = leads.find(l => l.id === editId);
-        if (lead) { Object.assign(lead, { nombre, email, telefono, notas, stage }); }
-        saveLeads(leads);
-        showToast('Lead actualizado', 'success');
-    } else {
-        // Create new — also call the API to fire domain events
-        const newLead = {
-            id:       crypto.randomUUID(),
-            nombre, email, telefono, notas, stage,
-            created:  new Date().toISOString(),
-        };
-        leads.push(newLead);
-        saveLeads(leads);
-
-        // Fire API event (best-effort)
-        try {
-            await fetch('/api/v1/events/demo/action/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'crear_cliente', data: { nombre, email } })
-            });
-        } catch(e) { /* non-critical */ }
-
-        showToast('Lead creado y evento emitido al bus', 'success');
+        showToast('Lead eliminado', 'success');
     }
 
-    closeModal();
-    render();
-}
+    // ── Utils ─────────────────────────────────────────────────────────────────────
+    function escHtml(str) {
+        return String(str)
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
 
-function deleteLead(id) {
-    if (!confirm('¿Eliminar este lead?')) return;
-    const leads = getLeads().filter(l => l.id !== id);
-    saveLeads(leads);
-    render();
-    showToast('Lead eliminado', 'success');
-}
+    // Close modal on Escape
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') closeModal();
+    });
 
-// ── Utils ─────────────────────────────────────────────────────────────────────
-function escHtml(str) {
-    return String(str)
-        .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-        .replace(/"/g,'&quot;');
-}
-
-// Close modal on Escape
-document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closeModal();
-});
-
-// ── Boot ──────────────────────────────────────────────────────────────────────
-(async () => {
-    await seedFromApi();
-    render();
-})();
+    // ── Boot ──────────────────────────────────────────────────────────────────────
+    (async () => {
+        await seedFromApi();
+        render();
+    })();
 </script>
 {% endblock %}
