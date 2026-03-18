@@ -510,36 +510,42 @@
                     'Content-Type': 'application/json'
                 }
             });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.error || `Server error: ${res.status}`);
+            }
+
             const data = await res.json();
             const clientes = data?.recent_resources?.clientes || [];
             console.log('Received clientes:', clientes.length);
             
-            if (clientes.length > 0) {
-                let currentLeads = force ? [] : getLeads();
-                const existingIds = new Set(currentLeads.map(l => l.id));
+            const currentLeads = force ? [] : getLeads();
+            const existingIds = new Set(currentLeads.map(l => l.id));
 
-                const newLeadsFromApi = clientes
-                    .filter(c => !existingIds.has(c.id))
-                    .map((c, i) => ({
-                        id: c.id,
-                        nombre: c.nombre,
-                        email: c.email || '',
-                        telefono: c.telefono || '',
-                        notas: '',
-                        stage: STAGES[i % (STAGES.length - 2)].id, // avoid closed/lost by default
-                        created: c.created_at,
-                    }));
-                
+            const newLeadsFromApi = clientes
+                .filter(c => !existingIds.has(c.id))
+                .map((c, i) => ({
+                    id: c.id,
+                    nombre: c.nombre,
+                    email: c.email || '',
+                    telefono: c.telefono || '',
+                    notas: '',
+                    stage: STAGES[i % (STAGES.length - 2)].id,
+                    created: c.created_at,
+                }));
+            
+            if (newLeadsFromApi.length > 0 || force) {
                 const updatedLeads = [...currentLeads, ...newLeadsFromApi];
                 saveLeads(updatedLeads);
                 render();
                 if (force) showToast(`Sincronizados ${newLeadsFromApi.length} nuevos contactos`, 'success');
             } else {
-                if (force) showToast('No se encontraron nuevos contactos para sincronizar', 'info');
+                if (force) showToast('No hay nuevos contactos para sincronizar', 'info');
             }
         } catch (err) {
             console.error('Sync error:', err);
-            if (force) showToast('Error al sincronizar con la base de datos', 'error');
+            if (force) showToast(`Error al sincronizar: ${err.message}`, 'error');
         }
     }
 
@@ -690,6 +696,7 @@
             showToast('Lead actualizado', 'success');
         } else {
             // Create new — also call the API to fire domain events
+            const tempId = crypto.randomUUID(); // Temporary ID for local storage
             const newLead = {
                 id: crypto.randomUUID(),
                 nombre, email, telefono, notas, stage,
