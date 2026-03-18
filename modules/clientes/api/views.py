@@ -357,13 +357,19 @@ class ContactoViewSet(viewsets.ReadOnlyModelViewSet):
         return tenant
 
     def get_queryset(self):
-        tenant = self._get_tenant()
-        if not tenant:
-            return Cliente.objects.none()
+        try:
+            tenant = self._get_tenant()
+            if not tenant:
+                return Cliente.objects.none()
 
-        search = self.request.query_params.get("search")
-        ordering = self.request.query_params.get("ordering")
-        return get_contactos_queryset(tenant=tenant, search=search, ordering=ordering)
+            search = self.request.query_params.get("search")
+            ordering = self.request.query_params.get("ordering")
+            return get_contactos_queryset(tenant=tenant, search=search, ordering=ordering)
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error in ContactoViewSet.get_queryset: {str(e)}", exc_info=True)
+            raise
 
     def get_serializer_class(self):
         if self.action == "retrieve":
