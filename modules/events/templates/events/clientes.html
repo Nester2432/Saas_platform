@@ -697,7 +697,20 @@
         if (editId) {
             // Edit existing
             const lead = leads.find(l => l.id === editId);
-            if (lead) { Object.assign(lead, { nombre, email, telefono, notas, stage }); }
+            if (lead) { 
+                Object.assign(lead, { nombre, email, telefono, notas, stage }); 
+                
+                // Fire API event for Edit
+                console.log('Editing lead in: /api/v1/events/demo/action/');
+                fetch('/api/v1/events/demo/action/', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
+                    body: JSON.stringify({ action: 'editar_cliente', data: { id: editId, nombre, email, telefono } })
+                }).then(r => r.json()).then(d => console.log('Edit API response:', d)).catch(e => console.error('Edit API error:', e));
+            }
             saveLeads(leads);
             showToast('Lead actualizado', 'success');
         } else {
