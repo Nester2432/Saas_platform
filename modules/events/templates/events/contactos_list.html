@@ -221,8 +221,16 @@
                 const response = await fetch(url);
                 if (!response.ok) {
                     const err = await response.json().catch(() => ({}));
-                    console.error("API Error:", response.status, err);
-                    throw new Error(`HTTP ${response.status}`);
+                    console.error("API Error details:", response.status, err);
+                    let msg = "Error al cargar los datos.";
+                    if (response.status === 403) msg = "Acceso denegado (403). Verifique permisos.";
+                    if (response.status === 401) msg = "Sesión expirada (401). Recargue la página.";
+                    if (response.status === 500) msg = "Error interno del servidor (500).";
+                    
+                    tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 40px; color: #ef4444;">
+                        <i class="fas fa-exclamation-triangle"></i> ${msg}
+                    </td></tr>`;
+                    return;
                 }
                 const data = await response.json();
 
