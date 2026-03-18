@@ -400,7 +400,11 @@ class DemoActionView(APIView):
                     empresa=empresa,
                     datos={"nombre": nombre, "email": email},
                     usuario=user,
-                )
+                return Response({
+                    "message": "Cliente creado con éxito",
+                    "id": str(cliente.id),
+                    "nombre": nombre,
+                    **(_get_event_status(events.CLIENTE_CREADO, empresa.id) or {})
                 })
 
             elif action == "editar_cliente":
