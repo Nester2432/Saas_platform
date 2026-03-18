@@ -405,7 +405,10 @@
         <h1>Contactos</h1>
         <p id="summary-text">Arrastrá los leads entre columnas para avanzar en el embudo.</p>
     </div>
-    <button class="btn btn-primary" onclick="openCreateModal()">➕ Nuevo Lead</button>
+    <div style="display: flex; gap: 10px;">
+        <button class="btn btn-outline" onclick="seedFromApi(true)" title="Sincronizar con base de datos">🔄 Sincronizar</button>
+        <button class="btn btn-primary" onclick="openCreateModal()">➕ Nuevo Lead</button>
+    </div>
 </div>
 
 <!-- Kanban Board -->
@@ -483,23 +486,38 @@
     }
 
     // ── Seed from API on first load ───────────────────────────────────────────────
-    async function seedFromApi() {
-        if (getLeads().length > 0) return; // already seeded
+    async function seedFromApi(force = false) {
+        if (!force && getLeads().length > 0) return; // already seeded
+        
+        if (force) showToast('Sincronizando con base de datos...', 'success');
+
         try {
             const res = await fetch('/api/v1/events/demo/resources/');
             const data = await res.json();
             const clientes = data?.recent_resources?.clientes || [];
-            const leads = clientes.map((c, i) => ({
-                id: c.id,
-                nombre: c.nombre,
-                email: c.email || '',
-                telefono: c.telefono || '',
-                notas: '',
-                stage: STAGES[i % (STAGES.length - 1)].id,
-                created: c.created_at,
-            }));
-            saveLeads(leads);
-        } catch (e) { /* API not available, start empty */ }
+            
+            const currentLeads = force ? [] : getLeads();
+            const existingIds = new Set(currentLeads.map(l => l.id));
+
+            const newLeadsFromApi = clientes
+                .filter(c => !existingIds.has(c.id))
+                .map((c, i) => ({
+                    id: c.id,
+                    nombre: c.nombre,
+                    email: c.email || '',
+                    telefono: c.telefono || '',
+                    notas: '',
+                    stage: STAGES[i % (STAGES.length - 2)].id, // avoid closed/lost by default
+                    created: c.created_at,
+                }));
+            
+            const updatedLeads = [...currentLeads, ...newLeadsFromApi];
+            saveLeads(updatedLeads);
+            render();
+            if (force) showToast(`Sincronizados ${newLeadsFromApi.length} nuevos contactos`, 'success');
+        } catch (e) { 
+            if (force) showToast('Error al sincronizar', 'error');
+        }
     }
 
     // ── Drag & Drop state ─────────────────────────────────────────────────────────
@@ -544,12 +562,14 @@
     function renderCard(lead, stageId) {
         const initial = (lead.nombre || '?').charAt(0).toUpperCase();
         const date = new Date(lead.created).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' });
+        // Use a wrapper to differentiate between drag and click
         return `
         <div class="lead-card"
              id="card-${lead.id}"
              draggable="true"
              ondragstart="onDragStart(event,'${lead.id}')"
-             ondragend="onDragEnd(event)">
+             ondragend="onDragEnd(event)"
+             onclick="if(event.target.tagName !== 'BUTTON') window.location='/demo/contactos/${lead.id}/'">
             <div class="lead-card-header">
                 <div class="lead-avatar avatar-${stageId}">${initial}</div>
                 <div style="min-width:0">
@@ -657,14 +677,22 @@
 
             // Fire API event (best-effort)
             try {
-                await fetch('/api/v1/events/demo/action/', {
+                const apiRes = await fetch('/api/v1/events/demo/action/', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ action: 'crear_cliente', data: { nombre, email } })
                 });
+                if (apiRes.ok) {
+                    const apiData = await apiRes.json();
+                    // Update local ID with real DB ID if successful
+                    if (apiData.id) {
+                        newLead.id = apiData.id;
+                        saveLeads(leads);
+                    }
+                }
             } catch (e) { /* non-critical */ }
 
-            showToast('Lead creado y evento emitido al bus', 'success');
+            showToast('Lead creado y sincronizado con la base de datos', 'success');
         }
 
         closeModal();
