@@ -29,10 +29,11 @@ Generated routes:
 """
 
 from rest_framework.routers import DefaultRouter
-from modules.clientes.api.views import ClienteViewSet, EtiquetaClienteViewSet
+from modules.clientes.api.views import ClienteViewSet, EtiquetaClienteViewSet, ContactoViewSet
 
 router = DefaultRouter()
 router.register(r"clientes", ClienteViewSet, basename="cliente")
 router.register(r"etiquetas", EtiquetaClienteViewSet, basename="etiqueta-cliente")
+router.register(r"contactos", ContactoViewSet, basename="contacto")
 
 urlpatterns = router.urls

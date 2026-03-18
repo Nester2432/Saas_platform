@@ -2,6 +2,8 @@
 demo_views.py
 
 POST /api/v1/events/demo/full-flow/
+GET  /demo/contactos/
+GET  /demo/contactos/{id}/
 
 Executes the full domain event chain in a single request:
   1. crear_cliente         → evento: cliente_creado
@@ -514,4 +516,25 @@ class DemoEventosView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["active_page"] = "eventos"
+        return context
+
+class DemoContactosListView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = "events/contactos_list.html"
+    login_url = "/admin/login/"
+    def test_func(self):
+        return self.request.user.is_staff or getattr(self.request.user, "is_empresa_admin", False)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["active_page"] = "contactos"
+        return context
+
+class DemoContactosDetailView(LoginRequiredMixin, UserPassesTestMixin, TemplateView):
+    template_name = "events/contacto_360.html"
+    login_url = "/admin/login/"
+    def test_func(self):
+        return self.request.user.is_staff or getattr(self.request.user, "is_empresa_admin", False)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["active_page"] = "contactos"
+        context["contacto_id"] = self.kwargs.get("pk")
         return context

@@ -1,7 +1,8 @@
 from django.urls import path
 from .demo_views import (
     DemoDashboardView, DemoClientesView, DemoVentasView, DemoInventarioView,
-    DemoFacturacionView, DemoAgendaView, DemoBillingView, DemoEventosView
+    DemoFacturacionView, DemoAgendaView, DemoBillingView, DemoEventosView,
+    DemoContactosListView, DemoContactosDetailView
 )
 
 urlpatterns = [
@@ -13,4 +14,6 @@ urlpatterns = [
     path("demo/agenda/",     DemoAgendaView.as_view(),     name="demo-agenda"),
     path("demo/billing/",    DemoBillingView.as_view(),    name="demo-billing"),
     path("demo/eventos/",    DemoEventosView.as_view(),    name="demo-eventos"),
+    path("demo/contactos/",  DemoContactosListView.as_view(), name="demo-contactos"),
+    path("demo/contactos/<uuid:pk>/", DemoContactosDetailView.as_view(), name="demo-contacto-detalle"),
 ]

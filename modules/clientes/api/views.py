@@ -62,6 +62,14 @@ from modules.clientes.api.serializers import (
     HistorialClienteSerializer,
     AgregarEtiquetaSerializer,
 )
+from modules.clientes.api.serializers_crm import (
+    ContactoListSerializer,
+    Contacto360Serializer,
+)
+from modules.clientes.selectors_crm import (
+    get_contactos_queryset,
+    get_contacto_360,
+)
 from modules.clientes.services import ClienteService
 
 logger = logging.getLogger(__name__)
@@ -316,3 +324,34 @@ class EtiquetaClienteViewSet(TenantQuerysetMixin, viewsets.ModelViewSet):
         self.perform_create(serializer)
         output = EtiquetaClienteSerializer(serializer.instance, context={"request": request})
         return Response(output.data, status=status.HTTP_201_CREATED)
+
+class ContactoViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    CRM-optimized ViewSet for Contactos (aggregated read layer over Cliente).
+    
+    Provides:
+    - GET /contactos/     -> List with total_ventas, total_turnos and search.
+    - GET /contactos/{id} -> Single API response with full 360 detail (ventas, turnos, etc).
+    """
+    permission_classes = [IsTenantAuthenticated, ModuloActivoPermission]
+    modulo_requerido = "clientes"
+    pagination_class = DefaultPagination
+
+    def get_queryset(self):
+        search = self.request.query_params.get("search")
+        ordering = self.request.query_params.get("ordering")
+        return get_contactos_queryset(tenant=self.request.empresa, search=search, ordering=ordering)
+
+    def get_serializer_class(self):
+        if self.action == "retrieve":
+            return Contacto360Serializer
+        return ContactoListSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        instance_id = kwargs.get("pk")
+        data = get_contacto_360(cliente_id=instance_id, tenant=request.empresa)
+        if not data:
+            return Response({"error": "Contacto no encontrado"}, status=status.HTTP_404_NOT_FOUND)
+            
+        serializer = Contacto360Serializer(data, context={"request": request})
+        return Response(serializer.data)

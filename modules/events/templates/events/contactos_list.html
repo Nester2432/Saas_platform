@@ -1,0 +1,289 @@
+{% extends "events/base_demo.html" %}
+
+{% block title %}Contactos | GravitySaaS{% endblock %}
+
+{% block extra_css %}
+<style>
+    .contactos-container {
+        padding: 24px;
+        max-width: 1400px;
+        margin: 0 auto;
+    }
+
+    .header-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 16px;
+    }
+
+    .search-box {
+        position: relative;
+        flex: 1;
+        max-width: 400px;
+    }
+
+    .search-box i {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 10px 12px 10px 40px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        color: white;
+        transition: all 0.2s;
+    }
+
+    .search-input:focus {
+        background: rgba(255, 255, 255, 0.08);
+        border-color: var(--primary);
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+    }
+
+    /* Table Styles */
+    .crm-table-container {
+        background: var(--bg-card);
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        overflow: hidden;
+        box-shadow: var(--shadow-lg);
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+    }
+
+    th {
+        padding: 16px;
+        background: rgba(255, 255, 255, 0.02);
+        color: var(--text-muted);
+        font-weight: 500;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    td {
+        padding: 16px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        vertical-align: middle;
+    }
+
+    tr:last-child td {
+        border-bottom: none;
+    }
+
+    tr.clickable-row {
+        cursor: pointer;
+        transition: background 0.15s;
+    }
+
+    tr.clickable-row:hover {
+        background: rgba(255, 255, 255, 0.03);
+    }
+
+    .contact-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .contact-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: var(--primary-gradient);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        color: white;
+    }
+
+    .contact-name {
+        font-weight: 600;
+        display: block;
+        color: var(--text);
+    }
+
+    .contact-email {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+    }
+
+    .badge {
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+
+    .badge-active { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+    .badge-inactive { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+
+    .stat-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.85rem;
+        color: var(--text);
+    }
+
+    .stat-label {
+        color: var(--text-muted);
+        font-size: 0.75rem;
+    }
+
+    @media (max-width: 768px) {
+        .crm-table-container {
+            overflow-x: auto;
+        }
+        .header-actions {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .search-box {
+            max-width: none;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="contactos-container">
+    <div class="header-actions">
+        <div>
+            <h1 style="margin: 0; font-size: 1.8rem;">Contactos</h1>
+            <p style="color: var(--text-muted); margin: 4px 0 0;">Gestión de clientes y vista 360°</p>
+        </div>
+        
+        <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="contactoSearch" class="search-input" placeholder="Buscar por nombre, email o teléfono...">
+        </div>
+    </div>
+
+    <div class="crm-table-container">
+        <table id="contactosTable">
+            <thead>
+                <tr>
+                    <th>Nombre / Cliente</th>
+                    <th>Estado</th>
+                    <th>Ventas</th>
+                    <th>Turnos</th>
+                    <th>Última Interacción</th>
+                    <th>Alta</th>
+                </tr>
+            </thead>
+            <tbody id="contactosTbody">
+                <!-- Loading State -->
+                <tr>
+                    <td colspan="6" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                        <i class="fas fa-circle-notch fa-spin"></i> Cargando contactos...
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const tbody = document.getElementById('contactosTbody');
+        const searchInput = document.getElementById('contactoSearch');
+        
+        let debounceTimer;
+
+        async function fetchContactos(search = '') {
+            try {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                    <i class="fas fa-circle-notch fa-spin"></i> Cargando...
+                </td></tr>`;
+
+                const url = new URL('/api/v1/contactos/', window.location.origin);
+                if (search) url.searchParams.append('search', search);
+
+                const response = await fetch(url);
+                const data = await response.json();
+
+                renderTable(data.results);
+            } catch (error) {
+                console.error('Error fetching contactos:', error);
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 40px; color: #ef4444;">
+                    Error al cargar los datos. Reintente por favor.
+                </td></tr>`;
+            }
+        }
+
+        function renderTable(contactos) {
+            if (!contactos || contactos.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                    No se encontraron contactos.
+                </td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = contactos.map(c => {
+                const init = c.nombre ? c.nombre.charAt(0) : '?';
+                const lastDate = c.ultima_interaccion ? new Date(c.ultima_interaccion).toLocaleDateString() : 'N/A';
+                const createdDate = new Date(c.fecha_alta).toLocaleDateString();
+                const statusBadge = c.activo ? '<span class="badge badge-active">Activo</span>' : '<span class="badge badge-inactive">Inactivo</span>';
+
+                return `
+                    <tr class="clickable-row" onclick="window.location='/demo/contactos/${c.id}/'">
+                        <td>
+                            <div class="contact-info">
+                                <div class="contact-avatar">${init}</div>
+                                <div>
+                                    <span class="contact-name">${c.nombre} ${c.apellido || ''}</span>
+                                    <span class="contact-email">${c.email}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>${statusBadge}</td>
+                        <td>
+                            <div class="stat-badge">
+                                <i class="fas fa-shopping-cart" style="color: #3b82f6;"></i>
+                                <span>${c.total_ventas}</span>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="stat-badge">
+                                <i class="fas fa-calendar-check" style="color: #10b981;"></i>
+                                <span>${c.total_turnos}</span>
+                            </div>
+                        </td>
+                        <td style="font-size: 0.9rem;">${lastDate}</td>
+                        <td style="font-size: 0.85rem; color: var(--text-muted);">${createdDate}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                fetchContactos(e.target.value);
+            }, 300);
+        });
+
+        // Initial Load
+        fetchContactos();
+    });
+</script>
+{% endblock %}

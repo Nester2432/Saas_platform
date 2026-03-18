@@ -1,0 +1,421 @@
+{% extends "events/base_demo.html" %}
+
+{% block title %}Perfil 360 | GravitySaaS{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-container {
+        padding: 24px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .profile-header {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        margin-bottom: 32px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .profile-avatar-large {
+        width: 80px;
+        height: 80px;
+        border-radius: 20px;
+        background: var(--primary-gradient);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        font-weight: 700;
+        color: white;
+        box-shadow: 0 8px 16px rgba(59, 130, 246, 0.3);
+    }
+
+    .profile-meta h1 { margin: 0; font-size: 2rem; }
+    .profile-meta p { margin: 4px 0 0; color: var(--text-muted); }
+
+    /* Tabs */
+    .tabs-nav {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 24px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        padding-bottom: 1px;
+        overflow-x: auto;
+    }
+
+    .tab-btn {
+        padding: 12px 20px;
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        font-weight: 500;
+        cursor: pointer;
+        position: relative;
+        white-space: nowrap;
+        transition: all 0.2s;
+    }
+
+    .tab-btn:hover { color: var(--text); }
+
+    .tab-btn.active {
+        color: var(--primary);
+    }
+
+    .tab-btn.active::after {
+        content: '';
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: var(--primary);
+        border-radius: 2px 2px 0 0;
+    }
+
+    .tab-content {
+        display: none;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .card {
+        background: var(--bg-card);
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 24px;
+    }
+
+    .info-item label {
+        display: block;
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        margin-bottom: 6px;
+        letter-spacing: 0.05em;
+    }
+
+    .info-item span {
+        font-size: 1rem;
+        color: var(--text);
+        font-weight: 500;
+    }
+
+    /* Timeline */
+    .timeline {
+        position: relative;
+        padding-left: 32px;
+    }
+
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 11px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .timeline-item {
+        position: relative;
+        padding-bottom: 24px;
+    }
+
+    .timeline-icon {
+        position: absolute;
+        left: -32px;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: #1e293b;
+        border: 2px solid var(--primary);
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+    }
+
+    .timeline-content {
+        background: rgba(255, 255, 255, 0.02);
+        padding: 12px 16px;
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.03);
+    }
+
+    .timeline-time {
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        margin-bottom: 4px;
+    }
+
+    .timeline-title {
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin-bottom: 2px;
+    }
+
+    .timeline-desc {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+    }
+
+    .empty-state {
+        padding: 60px;
+        text-align: center;
+        color: var(--text-muted);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-container">
+    <div style="margin-bottom: 16px;">
+        <a href="{% url 'demo-contactos' %}" style="color: var(--text-muted); text-decoration: none; font-size: 0.9rem;">
+            <i class="fas fa-arrow-left"></i> Volver a la lista
+        </a>
+    </div>
+
+    <div id="profileLoader" style="text-align: center; padding: 100px;">
+        <i class="fas fa-circle-notch fa-spin fa-2x"></i>
+        <p style="margin-top: 16px; color: var(--text-muted);">Cargando perfil 360...</p>
+    </div>
+
+    <div id="profileContent" style="display: none;">
+        <header class="profile-header">
+            <div id="profileAvatar" class="profile-avatar-large"></div>
+            <div class="profile-meta">
+                <h1 id="profileName"></h1>
+                <p id="profileEmail"></p>
+            </div>
+        </header>
+
+        <nav class="tabs-nav">
+            <button class="tab-btn active" onclick="showTab('info')">Información</button>
+            <button class="tab-btn" onclick="showTab('ventas')">Ventas</button>
+            <button class="tab-btn" onclick="showTab('turnos')">Turnos</button>
+            <button class="tab-btn" onclick="showTab('facturas')">Facturas</button>
+            <button class="tab-btn" onclick="showTab('actividad')">Actividad</button>
+        </nav>
+
+        <!-- Tab: Info -->
+        <div id="tab-info" class="tab-content active">
+            <div class="card info-grid">
+                <div class="info-item">
+                    <label>Nombre Completo</label>
+                    <span id="infoFullname"></span>
+                </div>
+                <div class="info-item">
+                    <label>Email</label>
+                    <span id="infoEmail"></span>
+                </div>
+                <div class="info-item">
+                    <label>Teléfono</label>
+                    <span id="infoPhone"></span>
+                </div>
+                <div class="info-item">
+                    <label>Fecha de Alta</label>
+                    <span id="infoCreated"></span>
+                </div>
+                <div class="info-item">
+                    <label>Estado</label>
+                    <span id="infoStatus"></span>
+                </div>
+            </div>
+            <div class="card">
+                <label style="display:block; font-size:0.75rem; color:var(--text-muted); text-transform:uppercase; margin-bottom:12px;">Notas</label>
+                <p id="infoNotes" style="color:var(--text); line-height:1.5;"></p>
+            </div>
+        </div>
+
+        <!-- Tab: Ventas -->
+        <div id="tab-ventas" class="tab-content">
+            <div class="card">
+                <table style="width:100%; border-collapse:collapse;">
+                    <thead>
+                        <tr style="text-align:left; border-bottom:1px solid rgba(255,255,255,0.05);">
+                            <th style="padding:12px; color:var(--text-muted); font-size:0.8rem;">Número</th>
+                            <th style="padding:12px; color:var(--text-muted); font-size:0.8rem;">Fecha</th>
+                            <th style="padding:12px; color:var(--text-muted); font-size:0.8rem;">Items</th>
+                            <th style="padding:12px; color:var(--text-muted); font-size:0.8rem;">Total</th>
+                            <th style="padding:12px; color:var(--text-muted); font-size:0.8rem;">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ventasTbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab: Turnos -->
+        <div id="tab-turnos" class="tab-content">
+            <div class="card">
+                <table style="width:100%; border-collapse:collapse;">
+                    <thead>
+                        <tr style="text-align:left; border-bottom:1px solid rgba(255,255,255,0.05);">
+                            <th style="padding:12px; color:var(--text-muted); font-size:0.8rem;">Servicio</th>
+                            <th style="padding:12px; color:var(--text-muted); font-size:0.8rem;">Fecha</th>
+                            <th style="padding:12px; color:var(--text-muted); font-size:0.8rem;">Profesional</th>
+                            <th style="padding:12px; color:var(--text-muted); font-size:0.8rem;">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="turnosTbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab: Facturas -->
+        <div id="tab-facturas" class="tab-content">
+            <div class="card">
+                <table style="width:100%; border-collapse:collapse;">
+                    <thead>
+                        <tr style="text-align:left; border-bottom:1px solid rgba(255,255,255,0.05);">
+                            <th style="padding:12px; color:var(--text-muted); font-size:0.8rem;">Número</th>
+                            <th style="padding:12px; color:var(--text-muted); font-size:0.8rem;">Fecha</th>
+                            <th style="padding:12px; color:var(--text-muted); font-size:0.8rem;">Total</th>
+                            <th style="padding:12px; color:var(--text-muted); font-size:0.8rem;">Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody id="facturasTbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Tab: Actividad -->
+        <div id="tab-actividad" class="tab-content">
+            <div class="card">
+                <div id="actividadTimeline" class="timeline"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const contactoId = "{{ contacto_id }}";
+    
+    function showTab(tabName) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        
+        event.currentTarget.classList.add('active');
+        document.getElementById(`tab-${tabName}`).classList.add('active');
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        try {
+            const response = await fetch(`/api/v1/contactos/${contactoId}/`);
+            if (!response.ok) throw new Error('Carga fallida');
+            const data = await response.json();
+
+            // Render Header
+            const c = data.cliente;
+            document.getElementById('profileAvatar').textContent = c.nombre.charAt(0);
+            document.getElementById('profileName').textContent = `${c.nombre} ${c.apellido || ''}`;
+            document.getElementById('profileEmail').textContent = c.email;
+
+            // Render Info
+            document.getElementById('infoFullname').textContent = `${c.nombre} ${c.apellido || ''}`;
+            document.getElementById('infoEmail').textContent = c.email;
+            document.getElementById('infoPhone').textContent = c.telefono || 'Sin teléfono';
+            document.getElementById('infoCreated').textContent = new Date(c.fecha_alta).toLocaleDateString();
+            document.getElementById('infoStatus').textContent = c.activo ? 'Activo' : 'Inactivo';
+            document.getElementById('infoNotes').textContent = c.notas || 'Sin notas registradas.';
+
+            // Render Ventas
+            const ventasTbody = document.getElementById('ventasTbody');
+            if (data.ventas.length === 0) {
+                ventasTbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:20px; color:var(--text-muted);">Sin ventas</td></tr>';
+            } else {
+                ventasTbody.innerHTML = data.ventas.map(v => `
+                    <tr>
+                        <td style="padding:12px; font-weight:600;">${v.numero}</td>
+                        <td style="padding:12px;">${new Date(v.fecha).toLocaleDateString()}</td>
+                        <td style="padding:12px;">${v.cantidad_items}</td>
+                        <td style="padding:12px; font-weight:600;">$${parseFloat(v.total).toLocaleString()}</td>
+                        <td style="padding:12px;"><span class="badge" style="background:rgba(255,255,255,0.05);">${v.estado}</span></td>
+                    </tr>
+                `).join('');
+            }
+
+            // Render Turnos
+            const turnosTbody = document.getElementById('turnosTbody');
+            if (data.turnos.length === 0) {
+                turnosTbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-muted);">Sin turnos</td></tr>';
+            } else {
+                turnosTbody.innerHTML = data.turnos.map(t => `
+                    <tr>
+                        <td style="padding:12px; font-weight:600;">${t.servicio_nombre}</td>
+                        <td style="padding:12px;">${new Date(t.fecha).toLocaleString()}</td>
+                        <td style="padding:12px;">${t.profesional_nombre}</td>
+                        <td style="padding:12px;"><span class="badge" style="background:rgba(255,255,255,0.05);">${t.estado}</span></td>
+                    </tr>
+                `).join('');
+            }
+
+            // Render Facturas
+            const facturasTbody = document.getElementById('facturasTbody');
+            if (data.facturas.length === 0) {
+                facturasTbody.innerHTML = '<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-muted);">Sin facturas</td></tr>';
+            } else {
+                facturasTbody.innerHTML = data.facturas.map(f => `
+                    <tr>
+                        <td style="padding:12px; font-weight:600;">${f.numero || 'Borrador'}</td>
+                        <td style="padding:12px;">${new Date(f.fecha).toLocaleDateString()}</td>
+                        <td style="padding:12px;">$${parseFloat(f.total).toLocaleString()}</td>
+                        <td style="padding:12px;"><span class="badge" style="background:rgba(255,255,255,0.05);">${f.estado}</span></td>
+                    </tr>
+                `).join('');
+            }
+
+            // Render Actividad
+            const timeline = document.getElementById('actividadTimeline');
+            if (data.actividad.length === 0) {
+                timeline.innerHTML = '<div class="empty-state">Sin actividad registrada.</div>';
+            } else {
+                timeline.innerHTML = data.actividad.map(a => `
+                    <div class="timeline-item">
+                        <div class="timeline-icon">
+                            <i class="fas fa-history"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="timeline-time">${new Date(a.created_at).toLocaleString()}</div>
+                            <div class="timeline-title">${a.tipo_display}</div>
+                            <div class="timeline-desc">${a.descripcion}</div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            // Show content
+            document.getElementById('profileLoader').style.display = 'none';
+            document.getElementById('profileContent').style.display = 'block';
+
+        } catch (error) {
+            console.error('Error loading CRM 360:', error);
+            document.getElementById('profileLoader').innerHTML = `
+                <i class="fas fa-exclamation-triangle fa-2x" style="color:#ef4444;"></i>
+                <p style="margin-top: 16px; color:#ef4444;">No se pudo cargar el perfil.</p>
+            `;
+        }
+    });
+</script>
+{% endblock %}
