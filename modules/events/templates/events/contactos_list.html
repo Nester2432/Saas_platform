@@ -276,7 +276,7 @@
                 const statusBadge = c.activo ? '<span class="badge badge-active">Activo</span>' : '<span class="badge badge-inactive">Inactivo</span>';
 
                 return `
-                    <tr class="clickable-row" onclick="window.location='/demo/contactos/${c.id}/'">
+                    <tr class="clickable-row" onclick="window.location='/events/demo/contactos/${c.id}/'">
                         <td>
                             <div class="contact-info">
                                 <div class="contact-avatar">${init}</div>
@@ -306,6 +306,7 @@
             }).join('');
         }
 
+        let debounceTimer;
         searchInput.addEventListener('input', (e) => {
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(() => {
