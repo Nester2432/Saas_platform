@@ -219,6 +219,11 @@
                 if (search) url.searchParams.append('search', search);
 
                 const response = await fetch(url);
+                if (!response.ok) {
+                    const err = await response.json().catch(() => ({}));
+                    console.error("API Error:", response.status, err);
+                    throw new Error(`HTTP ${response.status}`);
+                }
                 const data = await response.json();
 
                 renderTable(data.results);

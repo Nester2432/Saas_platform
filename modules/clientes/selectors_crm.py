@@ -29,22 +29,18 @@ def get_contactos_queryset(tenant, search=None, ordering=None):
     last_turno = Turno.objects.filter(cliente=OuterRef('pk'), empresa=tenant).order_by('-created_at').values('created_at')[:1]
     last_hist  = HistorialCliente.objects.filter(cliente=OuterRef('pk'), empresa=tenant).order_by('-created_at').values('created_at')[:1]
 
+    from django.db.models.functions import Greatest
     qs = qs.annotate(
-        total_ventas=Count('ventas', filter=~Q(ventas__estado='CANCELADA'), distinct=True),
-        total_turnos=Count('turnos', filter=~Q(turnos__estado='CANCELADO'), distinct=True),
-        # Greatests/Coalesce approach for ultima_interaccion
-        # We use a simple Coalesce of subqueries for the most recent date
+        total_ventas=Count('ventas', filter=~Q(ventas__estado='CANCELADA')),
+        total_turnos=Count('turnos', filter=~Q(turnos__estado='CANCELADO')),
         _last_v=Subquery(last_venta),
         _last_t=Subquery(last_turno),
         _last_h=Subquery(last_hist),
     )
     
-    # We'll compute the max of these 3 in Python or via more complex SQL if needed, 
-    # but for the list view, we usually just want one of them or a composite.
-    # Let's use Coalesce to pick the most recent date found.
-    # In a real high-perf scenario, we might use GREATEST(coalesce, coalesce...)
+    # Compute the max date among all activity
     qs = qs.annotate(
-        ultima_interaccion=Coalesce('_last_h', '_last_v', '_last_t', 'created_at')
+        ultima_interaccion=Greatest('created_at', '_last_h', '_last_v', '_last_t')
     )
 
     if search:

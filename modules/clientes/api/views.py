@@ -325,6 +325,17 @@ class EtiquetaClienteViewSet(TenantQuerysetMixin, viewsets.ModelViewSet):
         output = EtiquetaClienteSerializer(serializer.instance, context={"request": request})
         return Response(output.data, status=status.HTTP_201_CREATED)
 
+class ContactoPermission(IsTenantAuthenticated):
+    """
+    Custom permission for CRM aggregation layer.
+    Allows platform admins/superusers even if they don't have a linked empresa,
+    as they will fallback to the first active empresa in the ViewSet.
+    """
+    def has_permission(self, request, view):
+        if request.user and (request.user.is_superuser or getattr(request.user, "is_platform_admin", False)):
+            return True
+        return super().has_permission(request, view)
+
 class ContactoViewSet(viewsets.ReadOnlyModelViewSet):
     """
     CRM-optimized ViewSet for Contactos (aggregated read layer over Cliente).
@@ -333,14 +344,26 @@ class ContactoViewSet(viewsets.ReadOnlyModelViewSet):
     - GET /contactos/     -> List with total_ventas, total_turnos and search.
     - GET /contactos/{id} -> Single API response with full 360 detail (ventas, turnos, etc).
     """
-    permission_classes = [IsTenantAuthenticated, ModuloActivoPermission]
+    permission_classes = [ContactoPermission, ModuloActivoPermission]
     modulo_requerido = "clientes"
     pagination_class = DefaultPagination
 
+    def _get_tenant(self):
+        tenant = getattr(self.request, "empresa", None)
+        if not tenant and (self.request.user.is_superuser or getattr(self.request.user, "is_platform_admin", False)):
+            # Fallback for demo/superadmin
+            from apps.empresas.models import Empresa
+            tenant = Empresa.objects.filter(is_active=True).first()
+        return tenant
+
     def get_queryset(self):
+        tenant = self._get_tenant()
+        if not tenant:
+            return Cliente.objects.none()
+
         search = self.request.query_params.get("search")
         ordering = self.request.query_params.get("ordering")
-        return get_contactos_queryset(tenant=self.request.empresa, search=search, ordering=ordering)
+        return get_contactos_queryset(tenant=tenant, search=search, ordering=ordering)
 
     def get_serializer_class(self):
         if self.action == "retrieve":
@@ -348,8 +371,9 @@ class ContactoViewSet(viewsets.ReadOnlyModelViewSet):
         return ContactoListSerializer
 
     def retrieve(self, request, *args, **kwargs):
+        tenant = self._get_tenant()
         instance_id = kwargs.get("pk")
-        data = get_contacto_360(cliente_id=instance_id, tenant=request.empresa)
+        data = get_contacto_360(cliente_id=instance_id, tenant=tenant)
         if not data:
             return Response({"error": "Contacto no encontrado"}, status=status.HTTP_404_NOT_FOUND)
             
