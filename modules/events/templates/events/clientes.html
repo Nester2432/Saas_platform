@@ -477,8 +477,14 @@
     const STORAGE_KEY = 'saas_demo_leads';
 
     function getLeads() {
-        try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+        try {
+            return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        }
         catch { return []; }
+    }
+
+    function saveLeads(leads) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(leads));
     }
 
     function getCookie(name) {
