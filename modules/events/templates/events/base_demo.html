@@ -100,7 +100,19 @@
             transition: background var(--transition), color var(--transition), transform var(--transition);
         }
         .sidebar-toggle:hover { background: rgba(255,255,255,0.07); color: var(--text); }
-        .sidebar.collapsed .sidebar-toggle { transform: rotate(180deg); }
+        .sidebar.collapsed .sidebar-toggle { 
+            transform: rotate(180deg); 
+        }
+
+        /* Ensure toggle is visible and centered when collapsed */
+        .sidebar.collapsed .sidebar-header {
+            justify-content: center;
+            padding: 20px 0;
+        }
+
+        .sidebar.collapsed .sidebar-header .user-avatar {
+            display: none;
+        }
 
         /* ── Nav ──────────────────────────────────────────────────── */
         .sidebar-nav {
