@@ -312,18 +312,36 @@
 <script>
     const contactoId = "{{ contacto_id }}";
     
-    function showTab(tabName) {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-        
-        event.currentTarget.classList.add('active');
-        document.getElementById(`tab-${tabName}`).classList.add('active');
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
     }
-
+    
     document.addEventListener('DOMContentLoaded', async () => {
         try {
-            const response = await fetch(`/api/v1/contactos/${contactoId}/`);
-            if (!response.ok) throw new Error('Carga fallida');
+            const response = await fetch(`/api/v1/contactos/${contactoId}/`, {
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken'),
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                let msg = "No se pudo cargar el perfil.";
+                if (response.status === 401) msg = "Sesión expirada (401).";
+                if (response.status === 403) msg = "Acceso denegado (403).";
+                throw new Error(msg);
+            }
             const data = await response.json();
 
             // Render Header
