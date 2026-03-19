@@ -364,8 +364,8 @@ class DemoResourcesView(APIView):
                     "ventas": [item for item in (safe_serialize_venta(v) for v in ventas) if item],
                     "facturas": [item for item in (safe_serialize_factura(f) for f in facturas) if item],
                     "turnos": [item for item in (safe_serialize_turno(t) for t in turnos) if item],
-                    "servicios": [{"id": str(s.id), "nombre": s.nombre, "color": getattr(s, 'color', '#3B82F6')} for s in servicios],
-                    "profesionales": [{"id": str(p.id), "nombre": getattr(p, 'nombre_completo', p.nombre)} for p in profesionales],
+                    "servicios": servicios,
+                    "profesionales": profesionales,
                 }
             })
         except Exception as e:
