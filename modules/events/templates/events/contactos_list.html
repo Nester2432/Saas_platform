@@ -181,12 +181,12 @@
         <table id="contactosTable">
             <thead>
                 <tr>
-                    <th>Nombre / Cliente</th>
-                    <th>Estado</th>
-                    <th>Ventas</th>
-                    <th>Turnos</th>
-                    <th>Última Interacción</th>
-                    <th>Alta</th>
+                    <th onclick="toggleSort('nombre')" style="cursor:pointer;">Nombre / Cliente <span id="sort-nombre"></span></th>
+                    <th onclick="toggleSort('activo')" style="cursor:pointer;">Estado <span id="sort-activo"></span></th>
+                    <th onclick="toggleSort('total_ventas')" style="cursor:pointer; text-align:center;">Ventas <span id="sort-total_ventas"></span></th>
+                    <th onclick="toggleSort('total_turnos')" style="cursor:pointer; text-align:center;">Turnos <span id="sort-total_turnos"></span></th>
+                    <th onclick="toggleSort('ultima_interaccion')" style="cursor:pointer;">Última Interacción <span id="sort-ultima_interaccion"></span></th>
+                    <th onclick="toggleSort('fecha_alta')" style="cursor:pointer;">Alta <span id="sort-fecha_alta"></span></th>
                 </tr>
             </thead>
             <tbody id="contactosTbody">
