@@ -82,10 +82,6 @@
                 <select id="t-cliente" style="width:100%; padding:10px; border-radius:8px; background:rgba(255,255,255,0.05); color:var(--text); border:1px solid var(--border);"></select>
             </div>
             <div>
-                <label style="display:block; font-size:0.85rem; color:var(--text-muted); margin-bottom:6px;">Servicio</label>
-                <select id="t-servicio" style="width:100%; padding:10px; border-radius:8px; background:rgba(255,255,255,0.05); color:var(--text); border:1px solid var(--border);"></select>
-            </div>
-            <div>
                 <label style="display:block; font-size:0.85rem; color:var(--text-muted); margin-bottom:6px;">Profesional</label>
                 <select id="t-profesional" style="width:100%; padding:10px; border-radius:8px; background:rgba(255,255,255,0.05); color:var(--text); border:1px solid var(--border);"></select>
             </div>
@@ -93,9 +89,13 @@
                 <label style="display:block; font-size:0.85rem; color:var(--text-muted); margin-bottom:6px;">Fecha y Hora</label>
                 <input type="datetime-local" id="t-fecha" style="width:100%; padding:10px; border-radius:8px; background:rgba(255,255,255,0.05); color:var(--text); border:1px solid var(--border);">
             </div>
+            <div>
+                <label style="display:block; font-size:0.85rem; color:var(--text-muted); margin-bottom:6px;">Notas / Motivo</label>
+                <textarea id="t-nota" placeholder="Escribe aquí notas sobre la cita..." style="width:100%; padding:10px; border-radius:8px; background:rgba(255,255,255,0.05); color:var(--text); border:1px solid var(--border); min-height:80px; resize:vertical;"></textarea>
+            </div>
             <div style="margin-top:8px; display:flex; justify-content:flex-end; gap:12px;">
                 <button class="btn btn-outline" onclick="closeTurnoModal()">Cancelar</button>
-                <button class="btn btn-primary" onclick="saveTurno()">Confirmar Turno</button>
+                <button class="btn btn-primary" id="btn-confirmar-turno" onclick="saveTurno()">Confirmar Turno</button>
             </div>
         </div>
     </div>
@@ -160,7 +160,6 @@
 
                 // Safe Fill Selects
                 fillSelect('t-cliente', resources.clientes || []);
-                fillSelect('t-servicio', resources.servicios || []);
                 fillSelect('t-profesional', resources.profesionales || []);
 
                 calendar = new FullCalendar.Calendar(calendarEl, {
@@ -214,13 +213,22 @@
         }
 
         window.saveTurno = async function() {
+            const btn = document.getElementById('btn-confirmar-turno');
             const payload = {
                 action: 'crear_turno',
                 cliente_id: document.getElementById('t-cliente').value,
-                servicio_id: document.getElementById('t-servicio').value,
                 profesional_id: document.getElementById('t-profesional').value,
-                fecha_inicio: document.getElementById('t-fecha').value
+                fecha_inicio: document.getElementById('t-fecha').value,
+                nota: document.getElementById('t-nota').value
             };
+
+            if (!payload.cliente_id || !payload.profesional_id || !payload.fecha_inicio) {
+                showToast("Por favor, completa todos los campos", "warning");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerText = "Agendando...";
 
             try {
                 const response = await fetch('/api/v1/events/demo/action/', {
@@ -233,15 +241,18 @@
                 });
                 
                 if (response.ok) {
-                    showToast("Turno agendado");
+                    showToast("Turno agendado correctamente");
                     closeTurnoModal();
-                    location.reload(); // Simple refresh for now
+                    location.reload();
                 } else {
                     const err = await response.json();
                     showToast(err.error || "Error al agendar", "error");
                 }
             } catch (error) {
                 showToast("Error de conexión", "error");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Confirmar Turno";
             }
         }
 
@@ -251,7 +262,7 @@
             document.getElementById('d-info').innerHTML = `
                 <p><b>Profesional:</b> ${p.profesional}</p>
                 <p><b>Inicio:</b> ${event.start.toLocaleString()}</p>
-                <p><b>Fin:</b> ${event.end ? event.end.toLocaleString() : 'N/A'}</p>
+                <p><b>Nota:</b> ${p.nota || 'Sin notas'}</p>
             `;
             
             const btnDelete = document.getElementById('btn-borrar-turno');

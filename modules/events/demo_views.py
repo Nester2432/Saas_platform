@@ -245,12 +245,29 @@ class DemoResourcesView(APIView):
             if not empresa:
                 return Response({"error": "No active empresa found."}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Get latest 10 of each
-            clientes = Cliente.objects.filter(empresa=empresa).order_by("-created_at")[:10]
-            ventas = Venta.objects.filter(empresa=empresa).order_by("-created_at")[:10]
-            facturas = Factura.objects.filter(empresa=empresa).order_by("-created_at")[:10]
-
             from modules.turnos.models import Turno, Servicio, Profesional
+            
+            # Auto-provision Demo Data if missing
+            if not Profesional.objects.filter(empresa=empresa).exists():
+                Profesional.objects.create(
+                    empresa=empresa, 
+                    nombre="Profesional Demo", 
+                    apellido="SaaS",
+                    especialidad="Consultoría General",
+                    color_agenda="#6366F1",
+                    activo=True
+                )
+            
+            if not Servicio.objects.filter(empresa=empresa).exists():
+                Servicio.objects.create(
+                    empresa=empresa,
+                    nombre="Servicio General",
+                    duracion_minutos=60,
+                    precio=0,
+                    color="#3B82F6",
+                    activo=True
+                )
+
             turnos = Turno.objects.filter(empresa=empresa, deleted_at__isnull=True).select_related('cliente', 'servicio', 'profesional')
             servicios = Servicio.objects.filter(empresa=empresa, activo=True)
             profesionales = Profesional.objects.filter(empresa=empresa, activo=True)
@@ -260,7 +277,7 @@ class DemoResourcesView(APIView):
                 try:
                     return {
                         "id": str(t.id),
-                        "title": f"{t.servicio.nombre} - {t.cliente.nombre if t.cliente else 'Sin cliente'}",
+                        "title": f"{t.cliente.nombre if t.cliente else 'Sin cliente'}",
                         "start": t.fecha_inicio.isoformat(),
                         "end": t.fecha_fin.isoformat(),
                         "color": t.servicio.color if t.servicio else "#3B82F6",
@@ -268,6 +285,7 @@ class DemoResourcesView(APIView):
                             "cliente": t.cliente.nombre if t.cliente else "N/A",
                             "profesional": t.profesional.nombre_completo,
                             "servicio": t.servicio.nombre,
+                            "nota": t.notas_internas,
                             "estado": t.estado
                         }
                     }
@@ -504,29 +522,30 @@ class DemoActionView(APIView):
                     from django.utils.dateparse import parse_datetime
                     from datetime import timedelta
 
-                    # Use request.data consistently
                     payload = request.data
                     cliente_id = payload.get("cliente_id")
-                    servicio_id = payload.get("servicio_id")
                     profesional_id = payload.get("profesional_id")
                     fecha_inicio_str = payload.get("fecha_inicio")
+                    nota = payload.get("nota", "")
 
-                    if not all([cliente_id, servicio_id, profesional_id, fecha_inicio_str]):
-                        missing = [k for k in ["cliente_id", "servicio_id", "profesional_id", "fecha_inicio"] if not payload.get(k)]
+                    if not all([cliente_id, profesional_id, fecha_inicio_str]):
+                        missing = [k for k in ["cliente_id", "profesional_id", "fecha_inicio"] if not payload.get(k)]
                         return Response({"error": f"Faltan campos obligatorios: {', '.join(missing)}"}, status=status.HTTP_400_BAD_REQUEST)
 
                     fecha_inicio = parse_datetime(fecha_inicio_str)
-                    if not fecha_inicio:
-                        return Response({"error": "Formato de fecha inválido. Use ISO format."}, status=status.HTTP_400_BAD_REQUEST)
-
+                    
                     try:
                         cliente = Cliente.objects.get(id=cliente_id, empresa=empresa)
-                        servicio = Servicio.objects.get(id=servicio_id, empresa=empresa)
                         profesional = Profesional.objects.get(id=profesional_id, empresa=empresa)
-                    except (Cliente.DoesNotExist, Servicio.DoesNotExist, Profesional.DoesNotExist) as e:
+                        
+                        # Use default service or create one if none
+                        servicio = Servicio.objects.filter(empresa=empresa).first()
+                        if not servicio:
+                            servicio = Servicio.objects.create(empresa=empresa, nombre="Servicio General", duracion_minutos=60)
+                            
+                    except (Cliente.DoesNotExist, Profesional.DoesNotExist) as e:
                         return Response({"error": f"Recurso no encontrado: {str(e)}"}, status=status.HTTP_404_NOT_FOUND)
 
-                    # Simple calculation: fecha_fin = inicio + service duration
                     fecha_fin = fecha_inicio + timedelta(minutes=getattr(servicio, 'duracion_minutos', 60))
 
                     turno = Turno.objects.create(
@@ -537,6 +556,7 @@ class DemoActionView(APIView):
                         fecha_inicio=fecha_inicio,
                         fecha_fin=fecha_fin,
                         estado="CONFIRMADO",
+                        notas_internas=nota,
                         created_by=user
                     )
 
