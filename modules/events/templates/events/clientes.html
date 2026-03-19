@@ -1,5 +1,6 @@
 {% extends "events/base_demo.html" %}
 {% block title %}Pipeline de Leads | GravitySaaS{% endblock %}
+{% block page_title %}Leads{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -402,7 +403,7 @@
 {% block content %}
 <div class="page-header">
     <div>
-        <h1>Contactos</h1>
+        <div id="summary-text" style="color:var(--text-muted);font-size:0.9rem;">Cargando pipeline...</div>
         <p id="summary-text">Arrastrá los leads entre columnas para avanzar en el embudo.</p>
     </div>
     <div style="display: flex; gap: 10px;">

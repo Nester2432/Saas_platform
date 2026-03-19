@@ -1,11 +1,12 @@
 {% extends "events/base_demo.html" %}
+{% block page_title %}Ventas{% endblock %}
 
 {% block title %}Ventas | GravitySaaS{% endblock %}
 
 {% block content %}
 <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 32px;">
     <div>
-        <h1 style="margin: 0; font-size: 2rem;">Ventas y Transacciones</h1>
+        <p style="color: var(--text-muted); margin: 4px 0 0;">Seguimiento de ingresos y transacciones reales</p>
         <p style="color: var(--text-muted); margin: 4px 0 0 0;">Crea ventas, gestiona cobros y verifica el estado de tus ingresos.</p>
     </div>
     <button class="btn btn-primary" onclick="openSaleModal()">🛒 Nueva Venta</button>

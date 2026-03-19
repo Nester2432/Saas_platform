@@ -1,11 +1,12 @@
 {% extends "events/base_demo.html" %}
+{% block page_title %}Inventario{% endblock %}
 
 {% block title %}Inventario | GravitySaaS{% endblock %}
 
 {% block content %}
 <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 32px;">
     <div>
-        <h1 style="margin: 0; font-size: 2rem;">Inventario y Stock</h1>
+        <p style="color: var(--text-muted); margin: 4px 0 0;">Control de stock y productos en tiempo real</p>
         <p style="color: var(--text-muted); margin: 4px 0 0 0;">Control de productos, stock en tiempo real y movimientos de almacén.</p>
     </div>
     <button class="btn btn-primary" onclick="showToast('Creación de producto en desarrollo', 'info')">➕ Nuevo Producto</button>
