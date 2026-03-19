@@ -252,11 +252,13 @@ class DemoResourcesView(APIView):
 
             from modules.turnos.models import Turno, Servicio, Profesional
             
-            # Auto-provision Demo Data if missing (Safe Block)
             try:
-                if not Profesional.objects.filter(empresa=empresa).exists():
+                prof_exists = Profesional.objects.filter(empresa=empresa).exists()
+                logger.info(f"Demo: Checking professionals for {empresa}. Exists: {prof_exists}")
+                if not prof_exists:
+                    logger.info("Demo: Provisioning 2 new professionals...")
                     # Profesional 1
-                    Profesional.objects.create(
+                    p1 = Profesional.objects.create(
                         empresa=empresa, 
                         nombre="Carlos", 
                         apellido="Jiménez",
@@ -265,7 +267,7 @@ class DemoResourcesView(APIView):
                         activo=True
                     )
                     # Profesional 2
-                    Profesional.objects.create(
+                    p2 = Profesional.objects.create(
                         empresa=empresa, 
                         nombre="Lucía", 
                         apellido="Torres",
@@ -273,8 +275,10 @@ class DemoResourcesView(APIView):
                         color_agenda="#EC4899",
                         activo=True
                     )
+                    logger.info(f"Demo: Created {p1.nombre} and {p2.nombre}")
                 
-                if not Servicio.objects.filter(empresa=empresa).exists():
+                serv_exists = Servicio.objects.filter(empresa=empresa).exists()
+                if not serv_exists:
                     Servicio.objects.create(
                         empresa=empresa,
                         nombre="Servicio General",
@@ -283,8 +287,9 @@ class DemoResourcesView(APIView):
                         color="#3B82F6",
                         activo=True
                     )
+                    logger.info("Demo: Created Servicio General")
             except Exception as e:
-                logger.error(f"Demo: Auto-provisioning failed: {e}")
+                logger.error(f"Demo: Auto-provisioning failed: {str(e)}", exc_info=True)
 
             turnos = Turno.objects.filter(empresa=empresa, deleted_at__isnull=True).select_related('cliente', 'servicio', 'profesional')
             servicios = [
