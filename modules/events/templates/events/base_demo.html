@@ -268,6 +268,15 @@
             z-index: 50;
         }
         .top-bar-right { display: flex; align-items: center; gap: 12px; margin-left: auto; }
+        .top-bar-title { 
+            font-size: 1.25rem; 
+            font-weight: 700; 
+            color: var(--text);
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
 
         .content {
             padding: 32px 40px;
@@ -471,6 +480,7 @@
 <main class="main">
     <div class="top-bar">
         <button class="hamburger" onclick="openMobileSidebar()" aria-label="Abrir menú">☰</button>
+        <h1 class="top-bar-title">{% block page_title %}Dashboard{% endblock %}</h1>
         <div class="top-bar-right">
             <div id="sync-status" class="badge badge-success" style="display:none; text-transform:none;">Sincronizado</div>
             <button class="btn btn-outline" onclick="location.reload()" title="Actualizar">🔄</button>
