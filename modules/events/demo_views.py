@@ -250,6 +250,11 @@ class DemoResourcesView(APIView):
             ventas = Venta.objects.filter(empresa=empresa).order_by("-created_at")[:10]
             facturas = Factura.objects.filter(empresa=empresa).order_by("-created_at")[:10]
 
+            from modules.turnos.models import Turno, Servicio, Profesional
+            turnos = Turno.objects.filter(empresa=empresa, deleted_at__isnull=True).select_related('cliente', 'servicio', 'profesional')
+            servicios = Servicio.objects.filter(empresa=empresa, activo=True)
+            profesionales = Profesional.objects.filter(empresa=empresa, activo=True)
+
             # Protected serialization to avoid 500 on data inconsistencies
             def safe_serialize_turno(t):
                 try:
@@ -317,8 +322,8 @@ class DemoResourcesView(APIView):
                     "ventas": [item for item in (safe_serialize_venta(v) for v in ventas) if item],
                     "facturas": [item for item in (safe_serialize_factura(f) for f in facturas) if item],
                     "turnos": [item for item in (safe_serialize_turno(t) for t in turnos) if item],
-                    "servicios": [{"id": str(s.id), "nombre": s.nombre} for s in servicios],
-                    "profesionales": [{"id": str(p.id), "nombre": p.nombre_completo} for p in profesionales],
+                    "servicios": [{"id": str(s.id), "nombre": s.nombre, "color": getattr(s, 'color', '#3B82F6')} for s in servicios],
+                    "profesionales": [{"id": str(p.id), "nombre": getattr(p, 'nombre_completo', p.nombre)} for p in profesionales],
                 }
             })
         except Exception as e:
