@@ -6,14 +6,14 @@ from .demo_views import (
 )
 
 urlpatterns = [
-    path("demo/dashboard/",  DemoDashboardView.as_view(),  name="demo-dashboard"),
-    path("demo/clientes/",   DemoClientesView.as_view(),   name="demo-clientes"),
-    path("demo/ventas/",     DemoVentasView.as_view(),     name="demo-ventas"),
-    path("demo/inventario/", DemoInventarioView.as_view(), name="demo-inventario"),
-    path("demo/facturacion/", DemoFacturacionView.as_view(), name="demo-facturacion"),
-    path("demo/agenda/",     DemoAgendaView.as_view(),     name="demo-agenda"),
-    path("demo/billing/",    DemoBillingView.as_view(),    name="demo-billing"),
-    path("demo/eventos/",    DemoEventosView.as_view(),    name="demo-eventos"),
-    path("demo/contactos/",  DemoContactosListView.as_view(), name="demo-contactos"),
-    path("demo/contactos/<uuid:pk>/", DemoContactosDetailView.as_view(), name="demo-contacto-detalle"),
+    path("dashboard/",  DemoDashboardView.as_view(),  name="dashboard"),
+    path("clientes/",   DemoClientesView.as_view(),   name="clientes"),
+    path("ventas/",     DemoVentasView.as_view(),     name="ventas"),
+    path("inventario/", DemoInventarioView.as_view(), name="inventario"),
+    path("facturacion/", DemoFacturacionView.as_view(), name="facturacion"),
+    path("agenda/",     DemoAgendaView.as_view(),     name="agenda"),
+    path("billing/",    DemoBillingView.as_view(),    name="billing"),
+    path("eventos/",    DemoEventosView.as_view(),    name="eventos"),
+    path("contactos/",  DemoContactosListView.as_view(), name="contactos"),
+    path("contactos/<uuid:pk>/", DemoContactosDetailView.as_view(), name="contacto-detalle"),
 ]

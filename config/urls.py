@@ -19,8 +19,8 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 
 
 urlpatterns = [
-    # Redirect root to the demo dashboard
-    path("", RedirectView.as_view(url="/events/demo/dashboard/", permanent=False)),
+    # Redirect root to the dashboard
+    path("", RedirectView.as_view(url="/events/dashboard/", permanent=False)),
     # Django admin
     path("admin/", admin.site.urls),
 
