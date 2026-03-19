@@ -254,24 +254,18 @@ class DemoResourcesView(APIView):
             
             try:
                 prof_exists = Profesional.objects.filter(empresa=empresa).exists()
-                logger.info(f"Demo: Checking professionals for {empresa}. Exists: {prof_exists}")
                 if not prof_exists:
-                    logger.info("Demo: Provisioning 2 new professionals...")
-                    # Profesional 1
                     p1 = Profesional.objects.create(
                         empresa=empresa, 
                         nombre="Carlos", 
                         apellido="Jiménez",
-                        especialidad="Especialista Senior",
                         color_agenda="#6366F1",
                         activo=True
                     )
-                    # Profesional 2
                     p2 = Profesional.objects.create(
                         empresa=empresa, 
                         nombre="Lucía", 
                         apellido="Torres",
-                        especialidad="Consultora Principal",
                         color_agenda="#EC4899",
                         activo=True
                     )
@@ -279,15 +273,23 @@ class DemoResourcesView(APIView):
                 
                 serv_exists = Servicio.objects.filter(empresa=empresa).exists()
                 if not serv_exists:
-                    Servicio.objects.create(
+                    s1 = Servicio.objects.create(
                         empresa=empresa,
                         nombre="Servicio General",
-                        duracion_minutos=60,
-                        precio=0,
+                        duracion_minutos=30,
+                        precio=1500,
                         color="#3B82F6",
                         activo=True
                     )
-                    logger.info("Demo: Created Servicio General")
+                    # Link professionals to service
+                    from modules.turnos.models import ProfesionalServicio
+                    for p in Profesional.objects.filter(empresa=empresa):
+                        ProfesionalServicio.objects.get_or_create(
+                            empresa=empresa,
+                            profesional=p,
+                            servicio=s1
+                        )
+                    logger.info("Demo: Created and linked Servicio General")
             except Exception as e:
                 logger.error(f"Demo: Auto-provisioning failed: {str(e)}", exc_info=True)
 
