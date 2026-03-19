@@ -119,10 +119,15 @@
 {% endblock %}
 
 {% block extra_js %}
-<!-- FullCalendar 6 individual scripts for compatibility -->
-<script src="https://cdn.jsdelivr.net/npm/@fullcalendar/index.global.min.js"></script>
+<!-- FullCalendar 6 Bundle (Global) -->
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        if (typeof FullCalendar === 'undefined') {
+            console.error("FullCalendar library failed to load from CDN.");
+            return;
+        }
+
         const calendarEl = document.getElementById('calendar');
         let calendar;
         let resources = { turnos: [], clientes: [], servicios: [], profesionales: [] };
