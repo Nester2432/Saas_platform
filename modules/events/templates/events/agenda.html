@@ -119,8 +119,8 @@
 {% endblock %}
 
 {% block extra_js %}
-<!-- FullCalendar 6 Bundle -->
-<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+<!-- FullCalendar 6 individual scripts for compatibility -->
+<script src="https://cdn.jsdelivr.net/npm/@fullcalendar/index.global.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const calendarEl = document.getElementById('calendar');
