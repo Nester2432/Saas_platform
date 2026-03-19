@@ -205,6 +205,7 @@
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', () => {
+        const tbody = document.getElementById('contactosTbody');
         const searchInput = document.getElementById('contactoSearch');
         
         let allContactos = [];
