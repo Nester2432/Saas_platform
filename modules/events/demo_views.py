@@ -251,6 +251,25 @@ class DemoResourcesView(APIView):
             facturas = Factura.objects.filter(empresa=empresa).order_by("-created_at")[:10]
 
             # Protected serialization to avoid 500 on data inconsistencies
+            def safe_serialize_turno(t):
+                try:
+                    return {
+                        "id": str(t.id),
+                        "title": f"{t.servicio.nombre} - {t.cliente.nombre if t.cliente else 'Sin cliente'}",
+                        "start": t.fecha_inicio.isoformat(),
+                        "end": t.fecha_fin.isoformat(),
+                        "color": t.servicio.color if t.servicio else "#3B82F6",
+                        "extendedProps": {
+                            "cliente": t.cliente.nombre if t.cliente else "N/A",
+                            "profesional": t.profesional.nombre_completo,
+                            "servicio": t.servicio.nombre,
+                            "estado": t.estado
+                        }
+                    }
+                except Exception as e:
+                    logger.warning(f"Demo: failed to serialize turno {t.id}: {e}")
+                    return None
+
             def safe_serialize_cliente(c):
                 try:
                     # Prioritize the property but fallback to manual concat if it fails
@@ -297,6 +316,9 @@ class DemoResourcesView(APIView):
                     "clientes": [item for item in (safe_serialize_cliente(c) for c in clientes) if item],
                     "ventas": [item for item in (safe_serialize_venta(v) for v in ventas) if item],
                     "facturas": [item for item in (safe_serialize_factura(f) for f in facturas) if item],
+                    "turnos": [item for item in (safe_serialize_turno(t) for t in turnos) if item],
+                    "servicios": [{"id": str(s.id), "nombre": s.nombre} for s in servicios],
+                    "profesionales": [{"id": str(p.id), "nombre": p.nombre_completo} for p in profesionales],
                 }
             })
         except Exception as e:
@@ -469,6 +491,66 @@ class DemoActionView(APIView):
                     "note": "La factura y notificación se procesarán asíncronamente.",
                     **(_get_event_status(events.VENTA_PAGADA, empresa.id) or {})
                 })
+
+            elif action == "crear_turno":
+                try:
+                    from modules.turnos.models import Turno, Servicio, Profesional
+                    from modules.clientes.models import Cliente
+                    from django.utils.dateparse import parse_datetime
+                    from datetime import timedelta
+
+                    # Basic validation
+                    cliente_id = request.data.get("cliente_id")
+                    servicio_id = request.data.get("servicio_id")
+                    profesional_id = request.data.get("profesional_id")
+                    fecha_inicio_str = request.data.get("fecha_inicio")
+
+                    if not all([cliente_id, servicio_id, profesional_id, fecha_inicio_str]):
+                        return Response({"error": "Missing fields"}, status=status.HTTP_400_BAD_REQUEST)
+
+                    fecha_inicio = parse_datetime(fecha_inicio_str)
+                    cliente = Cliente.objects.get(id=cliente_id, empresa=empresa)
+                    servicio = Servicio.objects.get(id=servicio_id, empresa=empresa)
+                    profesional = Profesional.objects.get(id=profesional_id, empresa=empresa)
+
+                    # Simple calculation: fecha_fin = inicio + service duration
+                    fecha_fin = fecha_inicio + timedelta(minutes=servicio.duracion_minutos)
+
+                    turno = Turno.objects.create(
+                        empresa=empresa,
+                        cliente=cliente,
+                        servicio=servicio,
+                        profesional=profesional,
+                        fecha_inicio=fecha_inicio,
+                        fecha_fin=fecha_fin,
+                        estado="CONFIRMADO",
+                        created_by=user
+                    )
+
+                    return Response({
+                        "success": True, 
+                        "turno_id": str(turno.id),
+                        "message": "Turno creado correctamente"
+                    })
+                except Exception as e:
+                    logger.exception("Demo Action: crear_turno failed")
+                    return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+            elif action == "borrar_turno":
+                try:
+                    from modules.turnos.models import Turno
+                    from django.utils import timezone
+                    turno_id = request.data.get("turno_id")
+                    if not turno_id:
+                        return Response({"error": "Missing turno_id"}, status=status.HTTP_400_BAD_REQUEST)
+                    
+                    # Soft delete
+                    Turno.objects.filter(id=turno_id, empresa=empresa).update(deleted_at=timezone.now())
+                    
+                    return Response({"success": True, "message": "Turno eliminado"})
+                except Exception as e:
+                    logger.exception("Demo Action: borrar_turno failed")
+                    return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
             else:
                 return Response({"error": f"Acción desconocida: {action}"}, status=status.HTTP_400_BAD_REQUEST)
