@@ -401,12 +401,11 @@
 {% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <div>
-        <div id="summary-text" style="color:var(--text-muted);font-size:0.9rem;">Cargando pipeline...</div>
-        <p id="summary-text">Arrastrá los leads entre columnas para avanzar en el embudo.</p>
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <div id="summary-text" style="color:var(--text-muted); font-size:0.95rem; font-weight: 500;">
+        Cargando pipeline...
     </div>
-    <div style="display: flex; gap: 10px;">
+    <div style="display: flex; gap: 12px;">
         <button class="btn btn-outline" onclick="seedFromApi(true)" title="Sincronizar con base de datos">🔄 Sincronizar</button>
         <button class="btn btn-primary" onclick="openCreateModal()">➕ Nuevo Lead</button>
     </div>
