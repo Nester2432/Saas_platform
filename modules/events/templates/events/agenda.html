@@ -1,70 +1,285 @@
 {% extends "events/base_demo.html" %}
-{% block page_title %}Agenda{% endblock %}
+{% block page_title %}Agenda Interactiva{% endblock %}
 
-{% block title %}Agenda | GravitySaaS{% endblock %}
+{% block extra_css %}
+<!-- FullCalendar 6 Bundle -->
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+<style>
+    :root {
+        --fc-border-color: var(--border);
+        --fc-daygrid-event-dot-width: 8px;
+        --fc-list-event-dot-width: 10px;
+        --fc-button-bg-color: var(--card-bg);
+        --fc-button-border-color: var(--border);
+        --fc-button-text-color: var(--text);
+        --fc-button-hover-bg-color: var(--primary);
+        --fc-button-hover-border-color: var(--primary);
+        --fc-button-active-bg-color: var(--primary);
+        --fc-button-active-border-color: var(--primary);
+        --fc-today-bg-color: rgba(99, 102, 241, 0.05);
+    }
+
+    .fc { 
+        background: var(--card-bg);
+        padding: 20px;
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        color: var(--text);
+    }
+    .fc-toolbar-title { font-size: 1.25rem !important; font-weight: 700 !important; }
+    .fc-col-header-cell { padding: 12px 0 !important; background: rgba(255,255,255,0.02); }
+    .fc-event { cursor: pointer; border: none !important; padding: 2px 4px; border-radius: 4px; }
+    .fc-v-event { background-color: var(--primary); }
+    
+    .calendar-container {
+        display: grid;
+        grid-template-columns: 1fr 300px;
+        gap: 24px;
+        margin-top: 20px;
+    }
+
+    .sidebar-panel {
+        background: var(--card-bg);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 20px;
+        height: fit-content;
+    }
+
+    @media (max-width: 1100px) {
+        .calendar-container { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 32px;">
-    <div>
-        <p style="color: var(--text-muted); margin: 4px 0 0;">Gestión de turnos y disponibilidad horaria</p>
-        <p style="color: var(--text-muted); margin: 4px 0 0 0;">Gestión de citas, horarios disponibles y ocupación de profesionales.</p>
-    </div>
-    <div style="display: flex; gap: 12px;">
-        <button class="btn btn-outline">📅 Ver Semana</button>
-        <button class="btn btn-primary" onclick="showToast('Nuevo turno requiere configuración de profesional', 'warning')">➕ Agendar Turno</button>
-    </div>
-</div>
-
-<!-- Mock Calendar Interface -->
-<div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px; margin-bottom: 32px;">
-    {% for day in "LMMJVSD" %}
-    <div class="card" style="padding: 12px; text-align: center; background: {% if forloop.counter == 3 %}rgba(99, 102, 241, 0.1){% else %}var(--card-bg){% endif %}; border: {% if forloop.counter == 3 %}1px solid var(--primary){% else %}1px solid var(--border){% endif %};">
-        <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700;">{{ day }}</div>
-        <div style="font-size: 1.25rem; font-weight: 600; margin-top: 4px;">{{ forloop.counter|add:15 }}</div>
-    </div>
-    {% endfor %}
-</div>
-
-<div class="card">
-    <h2 style="margin-top: 0; font-size: 1.25rem; margin-bottom: 24px;">Turnos del Día</h2>
+<div class="calendar-container">
+    <div id="calendar"></div>
     
-    <div style="display: flex; flex-direction: column; gap: 16px;">
-        <!-- Appointment 1 -->
-        <div style="display: flex; gap: 20px; align-items: center; padding: 16px; background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px solid var(--border);">
-            <div style="width: 80px; font-weight: 700; color: var(--primary-light);">09:00 AM</div>
-            <div style="flex: 1;">
-                <div style="font-weight: 600;">Consulta General</div>
-                <div style="font-size: 0.85rem; color: var(--text-muted);">Paciente: Juan Demo</div>
-            </div>
-            <div><span class="badge badge-success">Confirmado</span></div>
-            <div><button class="btn btn-outline btn-sm">Ver</button></div>
+    <div class="sidebar-panel">
+        <h3 style="margin-top:0; font-size:1.1rem; margin-bottom:16px;">Operaciones</h3>
+        <button class="btn btn-primary" style="width:100%; margin-bottom:12px;" onclick="openTurnoModal()">
+            <i class="fas fa-plus"></i> Nuevo Turno
+        </button>
+        <p style="font-size:0.85rem; color:var(--text-muted); line-height:1.5;">
+            Haz clic en un espacio vacío para agendar o sobre un turno existente para ver detalles y borrar.
+        </p>
+        
+        <hr style="border:0; border-top:1px solid var(--border); margin:20px 0;">
+        
+        <h3 style="font-size:1rem; margin-bottom:12px;">Leyenda</h3>
+        <div id="calendar-legend" style="display:flex; flex-direction:column; gap:8px;">
+            <!-- Dinámico -->
         </div>
-
-        <!-- Appointment 2 -->
-        <div style="display: flex; gap: 20px; align-items: center; padding: 16px; background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px solid var(--border); border-left: 4px solid var(--warning);">
-            <div style="width: 80px; font-weight: 700; color: var(--primary-light);">10:30 AM</div>
-            <div style="flex: 1;">
-                <div style="font-weight: 600;">Mantenimiento Mensual</div>
-                <div style="font-size: 0.85rem; color: var(--text-muted);">Cliente: TechCorp S.A.</div>
-            </div>
-            <div><span class="badge badge-warning">Pendiente</span></div>
-            <div><button class="btn btn-outline btn-sm">Ver</button></div>
-        </div>
-
-        <!-- Appointment 3 -->
-        <div style="display: flex; gap: 20px; align-items: center; padding: 16px; background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px solid var(--border);">
-            <div style="width: 80px; font-weight: 700; color: var(--primary-light);">02:00 PM</div>
-            <div style="flex: 1;">
-                <div style="font-weight: 600;">Revisión de Cuenta</div>
-                <div style="font-size: 0.85rem; color: var(--text-muted);">Cliente: Maria Soler</div>
-            </div>
-            <div><span class="badge badge-success">Confirmado</span></div>
-            <div><button class="btn btn-outline btn-sm">Ver</button></div>
-        </div>
-    </div>
-
-    <div style="margin-top: 32px; padding: 16px; background: rgba(245, 158, 11, 0.05); border: 1px dashed var(--warning); border-radius: 8px;">
-        <p style="margin: 0; font-size: 0.85rem; color: var(--warning);"><b>Nota:</b> Esta pantalla utiliza datos de demostración (mock) para ilustrar la interfaz de agenda. La integración con el módulo de 'turnos' real está disponible mediante API.</p>
     </div>
 </div>
+
+<!-- Modal Nuevo Turno -->
+<div id="modal-turno" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:20000; align-items:center; justify-content:center; backdrop-filter:blur(4px);">
+    <div style="background:var(--card-bg); width:95%; max-width:450px; border-radius:16px; padding:28px; border:1px solid var(--border); box-shadow:0 20px 50px rgba(0,0,0,0.5);">
+        <h2 style="margin:0 0 20px 0; font-size:1.3rem;">📅 Agendar Cita</h2>
+        <div style="display:flex; flex-direction:column; gap:16px;">
+            <div>
+                <label style="display:block; font-size:0.85rem; color:var(--text-muted); margin-bottom:6px;">Cliente</label>
+                <select id="t-cliente" style="width:100%; padding:10px; border-radius:8px; background:rgba(255,255,255,0.05); color:var(--text); border:1px solid var(--border);"></select>
+            </div>
+            <div>
+                <label style="display:block; font-size:0.85rem; color:var(--text-muted); margin-bottom:6px;">Servicio</label>
+                <select id="t-servicio" style="width:100%; padding:10px; border-radius:8px; background:rgba(255,255,255,0.05); color:var(--text); border:1px solid var(--border);"></select>
+            </div>
+            <div>
+                <label style="display:block; font-size:0.85rem; color:var(--text-muted); margin-bottom:6px;">Profesional</label>
+                <select id="t-profesional" style="width:100%; padding:10px; border-radius:8px; background:rgba(255,255,255,0.05); color:var(--text); border:1px solid var(--border);"></select>
+            </div>
+            <div>
+                <label style="display:block; font-size:0.85rem; color:var(--text-muted); margin-bottom:6px;">Fecha y Hora</label>
+                <input type="datetime-local" id="t-fecha" style="width:100%; padding:10px; border-radius:8px; background:rgba(255,255,255,0.05); color:var(--text); border:1px solid var(--border);">
+            </div>
+            <div style="margin-top:8px; display:flex; justify-content:flex-end; gap:12px;">
+                <button class="btn btn-outline" onclick="closeTurnoModal()">Cancelar</button>
+                <button class="btn btn-primary" onclick="saveTurno()">Confirmar Turno</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Detalle Turno -->
+<div id="modal-detalle" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:20000; align-items:center; justify-content:center; backdrop-filter:blur(4px);">
+    <div style="background:var(--card-bg); width:95%; max-width:400px; border-radius:16px; padding:28px; border:1px solid var(--border); position:relative;">
+        <h2 id="d-titulo" style="margin:0 0 12px 0; font-size:1.3rem; color:var(--primary-light);">Cita</h2>
+        <div id="d-info" style="font-size:0.95rem; line-height:1.6; color:var(--text);">
+            <!-- Dinámico -->
+        </div>
+        <div style="margin-top:24px; display:flex; justify-content:space-between; align-items:center;">
+            <button class="btn btn-danger btn-sm" id="btn-borrar-turno">
+                <i class="fas fa-trash"></i> Eliminar
+            </button>
+            <button class="btn btn-outline btn-sm" onclick="closeDetalleModal()">Cerrar</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const calendarEl = document.getElementById('calendar');
+        let calendar;
+        let resources = { turnos: [], clientes: [], servicios: [], profesionales: [] };
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        async function initCalendar() {
+            try {
+                const response = await fetch('/api/v1/events/demo/resources/', {
+                    headers: { 'X-CSRFToken': getCookie('csrftoken') }
+                });
+                const data = await response.json();
+                resources = data.recent_resources;
+
+                // Fill Selects
+                fillSelect('t-cliente', resources.clientes);
+                fillSelect('t-servicio', resources.servicios);
+                fillSelect('t-profesional', resources.profesionales);
+
+                calendar = new FullCalendar.Calendar(calendarEl, {
+                    initialView: 'dayGridMonth',
+                    headerToolbar: {
+                        left: 'prev,next today',
+                        center: 'title',
+                        right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                    },
+                    locale: 'es',
+                    firstDay: 1,
+                    events: resources.turnos,
+                    dateClick: function(info) {
+                        openTurnoModal(info.dateStr + "T09:00");
+                    },
+                    eventClick: function(info) {
+                        showDetalle(info.event);
+                    },
+                    themeSystem: 'standard'
+                });
+                calendar.render();
+                updateLegend();
+            } catch (error) {
+                console.error("Calendar init error:", error);
+                showToast("Error al cargar la agenda", "error");
+            }
+        }
+
+        function fillSelect(id, items) {
+            const select = document.getElementById(id);
+            select.innerHTML = items.map(i => `<option value="${i.id}">${i.nombre}</option>`).join('');
+        }
+
+        function updateLegend() {
+            const legend = document.getElementById('calendar-legend');
+            legend.innerHTML = resources.servicios.map(s => `
+                <div style="display:flex; align-items:center; gap:8px; font-size:0.8rem;">
+                    <div style="width:12px; height:12px; border-radius:3px; background:${s.color || '#3B82F6'}"></div>
+                    <span>${s.nombre}</span>
+                </div>
+            `).join('');
+        }
+
+        window.openTurnoModal = function(dateTime = "") {
+            if (dateTime) document.getElementById('t-fecha').value = dateTime.substring(0, 16);
+            document.getElementById('modal-turno').style.display = 'flex';
+        }
+
+        window.closeTurnoModal = function() {
+            document.getElementById('modal-turno').style.display = 'none';
+        }
+
+        window.saveTurno = async function() {
+            const payload = {
+                action: 'crear_turno',
+                cliente_id: document.getElementById('t-cliente').value,
+                servicio_id: document.getElementById('t-servicio').value,
+                profesional_id: document.getElementById('t-profesional').value,
+                fecha_inicio: document.getElementById('t-fecha').value
+            };
+
+            try {
+                const response = await fetch('/api/v1/events/demo/action/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (response.ok) {
+                    showToast("Turno agendado");
+                    closeTurnoModal();
+                    location.reload(); // Simple refresh for now
+                } else {
+                    const err = await response.json();
+                    showToast(err.error || "Error al agendar", "error");
+                }
+            } catch (error) {
+                showToast("Error de conexión", "error");
+            }
+        }
+
+        function showDetalle(event) {
+            const p = event.extendedProps;
+            document.getElementById('d-titulo').innerText = event.title;
+            document.getElementById('d-info').innerHTML = `
+                <p><b>Profesional:</b> ${p.profesional}</p>
+                <p><b>Inicio:</b> ${event.start.toLocaleString()}</p>
+                <p><b>Fin:</b> ${event.end ? event.end.toLocaleString() : 'N/A'}</p>
+            `;
+            
+            const btnDelete = document.getElementById('btn-borrar-turno');
+            btnDelete.onclick = () => deleteTurno(event.id);
+            
+            document.getElementById('modal-detalle').style.display = 'flex';
+        }
+
+        window.closeDetalleModal = function() {
+            document.getElementById('modal-detalle').style.display = 'none';
+        }
+
+        async function deleteTurno(id) {
+            if (!confirm("¿Eliminar este turno?")) return;
+            
+            try {
+                const response = await fetch('/api/v1/events/demo/action/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ action: 'borrar_turno', turno_id: id })
+                });
+
+                if (response.ok) {
+                    showToast("Turno eliminado");
+                    closeDetalleModal();
+                    location.reload();
+                }
+            } catch (error) {
+                showToast("Error al eliminar", "error");
+            }
+        }
+
+        initCalendar();
+    });
+</script>
 {% endblock %}
