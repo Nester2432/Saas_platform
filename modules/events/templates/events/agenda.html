@@ -2,8 +2,6 @@
 {% block page_title %}Agenda Interactiva{% endblock %}
 
 {% block extra_css %}
-<!-- FullCalendar 6 Bundle -->
-<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
 <style>
     :root {
         --fc-border-color: var(--border);
@@ -121,6 +119,8 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- FullCalendar 6 Bundle -->
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const calendarEl = document.getElementById('calendar');
