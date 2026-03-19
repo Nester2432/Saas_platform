@@ -205,8 +205,11 @@
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', () => {
-        const tbody = document.getElementById('contactosTbody');
         const searchInput = document.getElementById('contactoSearch');
+        
+        let allContactos = [];
+        let currentSortField = 'nombre';
+        let currentSortDir = 'asc'; // 'asc' or 'desc'
         
         function getCookie(name) {
             let cookieValue = null;
@@ -251,9 +254,8 @@
                     </td></tr>`;
                     return;
                 }
-                const data = await response.json();
-
-                renderTable(data.results);
+                allContactos = await response.json().then(d => d.results || []);
+                applySortAndRender();
             } catch (error) {
                 console.error('Error fetching contactos:', error);
                 tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 40px; color: #ef4444;">
@@ -271,33 +273,33 @@
             }
 
             tbody.innerHTML = contactos.map(c => {
-                const init = c.nombre ? c.nombre.charAt(0) : '?';
+                const init = (c.nombre || '?').charAt(0).toUpperCase();
                 const lastDate = c.ultima_interaccion ? new Date(c.ultima_interaccion).toLocaleDateString() : 'N/A';
                 const createdDate = new Date(c.fecha_alta).toLocaleDateString();
                 const statusBadge = c.activo ? '<span class="badge badge-active">Activo</span>' : '<span class="badge badge-inactive">Inactivo</span>';
 
                 return `
-                    <tr class="clickable-row" onclick="window.location='/events/demo/contactos/${c.id}/'">
+                    <tr class="clickable-row" onclick="window.location='/api/v1/events/demo/contactos/${c.id}/'">
                         <td>
                             <div class="contact-info">
                                 <div class="contact-avatar">${init}</div>
                                 <div>
-                                    <span class="contact-name">${c.nombre} ${c.apellido || ''}</span>
-                                    <span class="contact-email">${c.email}</span>
+                                    <span class="contact-name">${c.nombre || ''} ${c.apellido || ''}</span>
+                                    <span class="contact-email">${c.email || ''}</span>
                                 </div>
                             </div>
                         </td>
                         <td>${statusBadge}</td>
-                        <td>
-                            <div class="stat-badge">
+                        <td style="text-align:center;">
+                            <div class="stat-badge" style="justify-content:center;">
                                 <i class="fas fa-shopping-cart" style="color: #3b82f6;"></i>
-                                <span>${c.total_ventas}</span>
+                                <span>${c.total_ventas || 0}</span>
                             </div>
                         </td>
-                        <td>
-                            <div class="stat-badge">
+                        <td style="text-align:center;">
+                            <div class="stat-badge" style="justify-content:center;">
                                 <i class="fas fa-calendar-check" style="color: #10b981;"></i>
-                                <span>${c.total_turnos}</span>
+                                <span>${c.total_turnos || 0}</span>
                             </div>
                         </td>
                         <td style="font-size: 0.9rem;">${lastDate}</td>
@@ -305,6 +307,43 @@
                     </tr>
                 `;
             }).join('');
+        }
+
+        window.toggleSort = function(field) {
+            if (currentSortField === field) {
+                currentSortDir = (currentSortDir === 'asc') ? 'desc' : 'asc';
+            } else {
+                currentSortField = field;
+                currentSortDir = 'asc';
+            }
+            applySortAndRender();
+        };
+
+        function applySortAndRender() {
+            // Update UI indicators
+            document.querySelectorAll('th span[id^="sort-"]').forEach(s => s.innerHTML = '');
+            const indicator = document.getElementById(`sort-${currentSortField}`);
+            if (indicator) indicator.innerHTML = currentSortDir === 'asc' ? ' 🔼' : ' 🔽';
+
+            // Sort
+            const sorted = [...allContactos].sort((a, b) => {
+                let vA = a[currentSortField];
+                let vB = b[currentSortField];
+                
+                // Special handling for strings
+                if (typeof vA === 'string') vA = vA.toLowerCase();
+                if (typeof vB === 'string') vB = vB.toLowerCase();
+                
+                // Null/Undefined handling
+                if (vA == null) return 1;
+                if (vB == null) return -1;
+
+                if (vA < vB) return currentSortDir === 'asc' ? -1 : 1;
+                if (vA > vB) return currentSortDir === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            renderTable(sorted);
         }
 
         let debounceTimer;
