@@ -504,22 +504,30 @@ class DemoActionView(APIView):
                     from django.utils.dateparse import parse_datetime
                     from datetime import timedelta
 
-                    # Basic validation
-                    cliente_id = request.data.get("cliente_id")
-                    servicio_id = request.data.get("servicio_id")
-                    profesional_id = request.data.get("profesional_id")
-                    fecha_inicio_str = request.data.get("fecha_inicio")
+                    # Use request.data consistently
+                    payload = request.data
+                    cliente_id = payload.get("cliente_id")
+                    servicio_id = payload.get("servicio_id")
+                    profesional_id = payload.get("profesional_id")
+                    fecha_inicio_str = payload.get("fecha_inicio")
 
                     if not all([cliente_id, servicio_id, profesional_id, fecha_inicio_str]):
-                        return Response({"error": "Missing fields"}, status=status.HTTP_400_BAD_REQUEST)
+                        missing = [k for k in ["cliente_id", "servicio_id", "profesional_id", "fecha_inicio"] if not payload.get(k)]
+                        return Response({"error": f"Faltan campos obligatorios: {', '.join(missing)}"}, status=status.HTTP_400_BAD_REQUEST)
 
                     fecha_inicio = parse_datetime(fecha_inicio_str)
-                    cliente = Cliente.objects.get(id=cliente_id, empresa=empresa)
-                    servicio = Servicio.objects.get(id=servicio_id, empresa=empresa)
-                    profesional = Profesional.objects.get(id=profesional_id, empresa=empresa)
+                    if not fecha_inicio:
+                        return Response({"error": "Formato de fecha inválido. Use ISO format."}, status=status.HTTP_400_BAD_REQUEST)
+
+                    try:
+                        cliente = Cliente.objects.get(id=cliente_id, empresa=empresa)
+                        servicio = Servicio.objects.get(id=servicio_id, empresa=empresa)
+                        profesional = Profesional.objects.get(id=profesional_id, empresa=empresa)
+                    except (Cliente.DoesNotExist, Servicio.DoesNotExist, Profesional.DoesNotExist) as e:
+                        return Response({"error": f"Recurso no encontrado: {str(e)}"}, status=status.HTTP_404_NOT_FOUND)
 
                     # Simple calculation: fecha_fin = inicio + service duration
-                    fecha_fin = fecha_inicio + timedelta(minutes=servicio.duracion_minutos)
+                    fecha_fin = fecha_inicio + timedelta(minutes=getattr(servicio, 'duracion_minutos', 60))
 
                     turno = Turno.objects.create(
                         empresa=empresa,
@@ -538,8 +546,8 @@ class DemoActionView(APIView):
                         "message": "Turno creado correctamente"
                     })
                 except Exception as e:
-                    logger.exception("Demo Action: crear_turno failed")
-                    return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                    logger.exception(f"Demo Action: crear_turno failed: {str(e)}")
+                    return Response({"error": f"Error interno al crear el turno: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
             elif action == "borrar_turno":
                 try:
