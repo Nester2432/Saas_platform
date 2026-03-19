@@ -168,12 +168,16 @@
     <div class="header-actions">
         <div>
             <p style="color: var(--text-muted); margin: 4px 0 0;">Gestión centralizada de clientes y leads</p>
-            <p style="color: var(--text-muted); margin: 4px 0 0;">Gestión de clientes y vista 360°</p>
         </div>
         
-        <div class="search-box">
-            <i class="fas fa-search"></i>
-            <input type="text" id="contactoSearch" class="search-input" placeholder="Buscar por nombre, email o teléfono...">
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <div class="search-box" style="margin-bottom: 0; min-width: 300px;">
+                <i class="fas fa-search"></i>
+                <input type="text" id="contactoSearch" class="search-input" placeholder="Buscar por nombre, email o teléfono...">
+            </div>
+            <button class="btn btn-primary" onclick="openCreateModal()">
+                <i class="fas fa-plus"></i> Nuevo Contacto
+            </button>
         </div>
     </div>
 
@@ -198,6 +202,35 @@
                 </tr>
             </tbody>
         </table>
+    </div>
+</div>
+
+<!-- Modal para Nuevo Contacto -->
+<div id="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.6); z-index:10000; align-items:center; justify-content:center; backdrop-filter:blur(4px);">
+    <div style="background:var(--card-bg); width:90%; max-width:500px; border-radius:16px; border:1px solid var(--border); padding:28px; position:relative; box-shadow:0 20px 50px rgba(0,0,0,0.5);">
+        <button onclick="closeModal()" style="position:absolute; top:20px; right:20px; background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1.2rem;">✕</button>
+        <h2 style="margin:0 0 24px 0; font-size:1.5rem; color:var(--text);">➕ Nuevo Contacto</h2>
+        
+        <div style="display:flex; flex-direction:column; gap:16px;">
+            <div>
+                <label style="display:block; font-size:0.85rem; color:var(--text-muted); margin-bottom:6px;">Nombre / Razón Social *</label>
+                <input type="text" id="contact-nombre" style="width:100%; padding:12px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,0.05); color:var(--text);" placeholder="Ej: Juan Pérez o Tech Solutions">
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+                <div>
+                    <label style="display:block; font-size:0.85rem; color:var(--text-muted); margin-bottom:6px;">Email</label>
+                    <input type="email" id="contact-email" style="width:100%; padding:12px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,0.05); color:var(--text);" placeholder="juan@ejemplo.com">
+                </div>
+                <div>
+                    <label style="display:block; font-size:0.85rem; color:var(--text-muted); margin-bottom:6px;">Teléfono</label>
+                    <input type="text" id="contact-telefono" style="width:100%; padding:12px; border-radius:10px; border:1px solid var(--border); background:rgba(255,255,255,0.05); color:var(--text);" placeholder="+54 9 11...">
+                </div>
+            </div>
+            <div style="margin-top:12px; display:flex; justify-content:flex-end; gap:12px;">
+                <button class="btn btn-outline" onclick="closeModal()">Cancelar</button>
+                <button class="btn btn-primary" onclick="saveNewContact()">Crear Contacto</button>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
@@ -357,6 +390,60 @@
 
         // Initial Load
         fetchContactos();
+
+        // Modal Logic
+        window.openCreateModal = function() {
+            document.getElementById('modal-overlay').style.display = 'flex';
+        };
+
+        window.closeModal = function() {
+            document.getElementById('modal-overlay').style.display = 'none';
+        };
+
+        window.saveNewContact = async function() {
+            const nombre = document.getElementById('contact-nombre').value;
+            const email = document.getElementById('contact-email').value;
+            const telefono = document.getElementById('contact-telefono').value;
+
+            if (!nombre) {
+                showToast("El nombre es obligatorio", "error");
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/v1/events/demo/action/', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': getCookie('csrftoken'),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'crear_cliente',
+                        lead_data: {
+                            nombre: nombre,
+                            email: email,
+                            telefono: telefono,
+                            status: 'Contactado'
+                        }
+                    })
+                });
+
+                if (response.ok) {
+                    showToast("Contacto creado con éxito");
+                    closeModal();
+                    fetchContactos(); // Refresh list
+                    // Clear fields
+                    document.getElementById('contact-nombre').value = '';
+                    document.getElementById('contact-email').value = '';
+                    document.getElementById('contact-telefono').value = '';
+                } else {
+                    showToast("Error al crear el contacto", "error");
+                }
+            } catch (error) {
+                console.error("Error creating contact:", error);
+                showToast("Error de conexión", "error");
+            }
+        };
     });
 </script>
 {% endblock %}
