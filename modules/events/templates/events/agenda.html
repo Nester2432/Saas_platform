@@ -147,13 +147,21 @@
                 const response = await fetch('/api/v1/events/demo/resources/', {
                     headers: { 'X-CSRFToken': getCookie('csrftoken') }
                 });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
                 const data = await response.json();
+                if (!data.recent_resources) {
+                    throw new Error("Formato de datos inválido: falta recent_resources");
+                }
                 resources = data.recent_resources;
 
-                // Fill Selects
-                fillSelect('t-cliente', resources.clientes);
-                fillSelect('t-servicio', resources.servicios);
-                fillSelect('t-profesional', resources.profesionales);
+                // Safe Fill Selects
+                fillSelect('t-cliente', resources.clientes || []);
+                fillSelect('t-servicio', resources.servicios || []);
+                fillSelect('t-profesional', resources.profesionales || []);
 
                 calendar = new FullCalendar.Calendar(calendarEl, {
                     initialView: 'dayGridMonth',
@@ -164,7 +172,7 @@
                     },
                     locale: 'es',
                     firstDay: 1,
-                    events: resources.turnos,
+                    events: resources.turnos || [],
                     dateClick: function(info) {
                         openTurnoModal(info.dateStr + "T09:00");
                     },
@@ -177,7 +185,7 @@
                 updateLegend();
             } catch (error) {
                 console.error("Calendar init error:", error);
-                showToast("Error al cargar la agenda", "error");
+                showToast(`Error al cargar la agenda: ${error.message}`, "error");
             }
         }
 
