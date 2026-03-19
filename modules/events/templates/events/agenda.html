@@ -153,6 +153,7 @@
                 }
 
                 const data = await response.json();
+                console.log("Agenda Resources Loaded:", data); // Debug Log
                 if (!data.recent_resources) {
                     throw new Error("Formato de datos inválido: falta recent_resources");
                 }

@@ -287,8 +287,14 @@ class DemoResourcesView(APIView):
                 logger.error(f"Demo: Auto-provisioning failed: {e}")
 
             turnos = Turno.objects.filter(empresa=empresa, deleted_at__isnull=True).select_related('cliente', 'servicio', 'profesional')
-            servicios = Servicio.objects.filter(empresa=empresa, activo=True)
-            profesionales = Profesional.objects.filter(empresa=empresa, activo=True)
+            servicios = [
+                {"id": str(s.id), "nombre": s.nombre, "color": s.color} 
+                for s in Servicio.objects.filter(empresa=empresa, activo=True)
+            ]
+            profesionales = [
+                {"id": str(p.id), "nombre": p.nombre_completo} 
+                for p in Profesional.objects.filter(empresa=empresa, activo=True)
+            ]
 
             # Protected serialization to avoid 500 on data inconsistencies
             def safe_serialize_turno(t):
