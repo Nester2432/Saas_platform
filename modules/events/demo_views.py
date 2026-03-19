@@ -255,12 +255,22 @@ class DemoResourcesView(APIView):
             # Auto-provision Demo Data if missing (Safe Block)
             try:
                 if not Profesional.objects.filter(empresa=empresa).exists():
+                    # Profesional 1
                     Profesional.objects.create(
                         empresa=empresa, 
-                        nombre="Profesional Demo", 
-                        apellido="SaaS",
-                        especialidad="Consultoría General",
+                        nombre="Carlos", 
+                        apellido="Jiménez",
+                        especialidad="Especialista Senior",
                         color_agenda="#6366F1",
+                        activo=True
+                    )
+                    # Profesional 2
+                    Profesional.objects.create(
+                        empresa=empresa, 
+                        nombre="Lucía", 
+                        apellido="Torres",
+                        especialidad="Consultora Principal",
+                        color_agenda="#EC4899",
                         activo=True
                     )
                 
