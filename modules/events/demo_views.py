@@ -245,28 +245,36 @@ class DemoResourcesView(APIView):
             if not empresa:
                 return Response({"error": "No active empresa found."}, status=status.HTTP_400_BAD_REQUEST)
 
+            # Get latest 10 of each
+            clientes = Cliente.objects.filter(empresa=empresa).order_by("-created_at")[:10]
+            ventas = Venta.objects.filter(empresa=empresa).order_by("-created_at")[:10]
+            facturas = Factura.objects.filter(empresa=empresa).order_by("-created_at")[:10]
+
             from modules.turnos.models import Turno, Servicio, Profesional
             
-            # Auto-provision Demo Data if missing
-            if not Profesional.objects.filter(empresa=empresa).exists():
-                Profesional.objects.create(
-                    empresa=empresa, 
-                    nombre="Profesional Demo", 
-                    apellido="SaaS",
-                    especialidad="Consultoría General",
-                    color_agenda="#6366F1",
-                    activo=True
-                )
-            
-            if not Servicio.objects.filter(empresa=empresa).exists():
-                Servicio.objects.create(
-                    empresa=empresa,
-                    nombre="Servicio General",
-                    duracion_minutos=60,
-                    precio=0,
-                    color="#3B82F6",
-                    activo=True
-                )
+            # Auto-provision Demo Data if missing (Safe Block)
+            try:
+                if not Profesional.objects.filter(empresa=empresa).exists():
+                    Profesional.objects.create(
+                        empresa=empresa, 
+                        nombre="Profesional Demo", 
+                        apellido="SaaS",
+                        especialidad="Consultoría General",
+                        color_agenda="#6366F1",
+                        activo=True
+                    )
+                
+                if not Servicio.objects.filter(empresa=empresa).exists():
+                    Servicio.objects.create(
+                        empresa=empresa,
+                        nombre="Servicio General",
+                        duracion_minutos=60,
+                        precio=0,
+                        color="#3B82F6",
+                        activo=True
+                    )
+            except Exception as e:
+                logger.error(f"Demo: Auto-provisioning failed: {e}")
 
             turnos = Turno.objects.filter(empresa=empresa, deleted_at__isnull=True).select_related('cliente', 'servicio', 'profesional')
             servicios = Servicio.objects.filter(empresa=empresa, activo=True)
